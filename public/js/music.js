@@ -164,6 +164,7 @@ export const RetroSynthMusicEngine = {
             updateContext(phase, mood) {
                 this.phase = phase || this.phase;
                 this.mood = mood || this.mood;
+                if (this.playlistOwnsClock) return;
                 if (this.isPlaying && typeof Tone !== 'undefined') {
                     try {
                         Tone.Transport.bpm.rampTo(this.getTargetBpm(), 0.8);

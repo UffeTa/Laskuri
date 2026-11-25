@@ -1,4 +1,5 @@
 import { DANCE_STYLES } from '../../public/dances/registry.js';
+import { MUSIC_TRACKS, RANDOM_TRACK_ID } from '../../public/music/registry.js';
 import { isValidSlug, randomSuffix, slugify } from './slug.js';
 
 const MODES = new Set(['days_hours_seconds', 'hours_seconds']);
@@ -9,6 +10,10 @@ export function isAllowedDance(id) {
   return DANCE_STYLES.some((dance) => dance.id === id);
 }
 
+export function isAllowedTrack(id) {
+  return id === RANDOM_TRACK_ID || MUSIC_TRACKS.some((track) => track.id === id);
+}
+
 export function rowToCounter(row) {
   if (!row) return null;
   return {
@@ -17,6 +22,7 @@ export function rowToCounter(row) {
     targetTimeMs: Number(row.target_time_ms),
     startTimeMs: Number(row.start_time_ms),
     musicEnabled: Number(row.music_enabled) === 1,
+    musicTrack: row.music_track || RANDOM_TRACK_ID,
     danceStyle: row.dance_style,
     counterMode: row.counter_mode,
     createdAt: Number(row.created_at),
@@ -58,6 +64,14 @@ export function parseCounterInput(data) {
 
   if (typeof data.musicEnabled !== 'boolean') errors.push('Musiikkivalinta on virheellinen.');
   else value.musicEnabled = data.musicEnabled;
+
+  if (data.musicTrack === undefined || data.musicTrack === null || data.musicTrack === '') {
+    value.musicTrack = RANDOM_TRACK_ID;
+  } else if (!isAllowedTrack(data.musicTrack)) {
+    errors.push('Tuntematon taustaraita.');
+  } else {
+    value.musicTrack = data.musicTrack;
+  }
 
   if (!isAllowedDance(data.danceStyle)) errors.push('Tuntematon tanssityyli.');
   else value.danceStyle = data.danceStyle;
@@ -134,8 +148,8 @@ export async function createCounter(db, input) {
   try {
     await db.prepare(`
       INSERT INTO counters (
-        slug, name, target_time_ms, start_time_ms, music_enabled, dance_style, counter_mode, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        slug, name, target_time_ms, start_time_ms, music_enabled, dance_style, counter_mode, music_track, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).bind(
       allocated.slug,
       input.name,
@@ -144,6 +158,7 @@ export async function createCounter(db, input) {
       input.musicEnabled ? 1 : 0,
       input.danceStyle,
       input.counterMode,
+      input.musicTrack || RANDOM_TRACK_ID,
       now,
       now,
     ).run();
@@ -171,7 +186,7 @@ export async function updateCounter(db, currentSlug, input) {
     await db.prepare(`
       UPDATE counters
       SET slug = ?, name = ?, target_time_ms = ?, start_time_ms = ?, music_enabled = ?,
-          dance_style = ?, counter_mode = ?, updated_at = ?
+          dance_style = ?, counter_mode = ?, music_track = ?, updated_at = ?
       WHERE slug = ?
     `).bind(
       nextSlug,
@@ -181,6 +196,7 @@ export async function updateCounter(db, currentSlug, input) {
       input.musicEnabled ? 1 : 0,
       input.danceStyle,
       input.counterMode,
+      input.musicTrack || RANDOM_TRACK_ID,
       Date.now(),
       currentSlug,
     ).run();

@@ -1,6 +1,11 @@
 import assert from 'node:assert/strict';
 import { passwordsMatch, signSession, verifySession } from '../functions/lib/auth.js';
-import { isAllowedDance, parseCounterInput } from '../functions/lib/counters.js';
+import { isAllowedDance, isAllowedTrack, parseCounterInput } from '../functions/lib/counters.js';
+import { compileTrack } from '../public/music/sequence.js';
+import pihapolku from '../public/music/pihapolku.js';
+import yovuoro from '../public/music/yovuoro.js';
+import maaliviiva from '../public/music/maaliviiva.js';
+import { DANCE_STYLES } from '../public/dances/registry.js';
 import { isValidSlug, slugify } from '../functions/lib/slug.js';
 
 assert.equal(slugify('Työpäivä pulkassa & viikonloppu'), 'tyopaiva-pulkassa-viikonloppu');
@@ -14,6 +19,20 @@ assert.equal(isValidSlug('../etc'), false);
 assert.equal(isAllowedDance('groove'), true);
 assert.equal(isAllowedDance('robot'), true);
 assert.equal(isAllowedDance('nope'), false);
+assert.equal(isAllowedDance('disco'), true);
+assert.equal(isAllowedDance('moonwalk'), true);
+assert.ok(DANCE_STYLES.length >= 8);
+assert.equal(isAllowedTrack('random'), true);
+assert.equal(isAllowedTrack('pihapolku'), true);
+assert.equal(isAllowedTrack('ei-raitaa'), false);
+
+for (const definition of [pihapolku, yovuoro, maaliviiva]) {
+  const compiled = compileTrack(definition);
+  assert.ok(compiled.seconds >= 170 && compiled.seconds <= 210, `${definition.id} ${compiled.seconds}`);
+  assert.equal(compiled.bars % 1, 0);
+  const last = compiled.events[compiled.events.length - 1];
+  assert.ok(last.time < compiled.seconds);
+}
 
 const bad = parseCounterInput({
   name: '<script>alert(1)</script>',
@@ -23,6 +42,7 @@ const bad = parseCounterInput({
   counterMode: 'days_hours_seconds',
 });
 assert.equal(bad.errors.length, 0);
+assert.equal(bad.value.musicTrack, 'random');
 assert.equal(bad.value.name.includes('<'), true);
 assert.equal(bad.value.name.includes('\u0000'), false);
 

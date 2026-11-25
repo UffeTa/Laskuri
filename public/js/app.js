@@ -1,8 +1,10 @@
 import { ensureDanceStylesheet, loadAllDances } from '../dances/index.js';
+import { MUSIC_TRACKS, resolveTrackId } from '../music/index.js';
 import { updateTimeOfDayLighting } from './lighting.js';
 import { RetroSynthMusicEngine, setMusicNotifier } from './music.js';
+import { isMuted, playFanfare, playNext, setMusicMuted, startTrack, unlockAudio, currentTrack } from './playlist.js';
 import { runtime } from './runtime.js';
-import { applyDanceClass, renderScene, resolveScene, setCharacterPose } from './scene.js';
+import { applyPerformanceClasses, renderScene, resolveScene, setCharacterPose } from './scene.js';
 import {
   buildShareUrl,
   copyOrShare,
@@ -28,11 +30,11 @@ let appState = {
   scene: null,
   celebrated: false,
   danceStyle: 'groove',
-  musicEnabled: false,
+  musicEnabled: true,
+  musicTrack: 'random',
   slug: null,
 };
 
-let musicArmed = false;
 let poseErrorShown = false;
 
 const setupView = document.getElementById('setup-view');
@@ -43,6 +45,7 @@ const eventDateInput = document.getElementById('event-date');
 const eventTimeInput = document.getElementById('event-time');
 const danceSelect = document.getElementById('dance-style');
 const musicInput = document.getElementById('music-enabled');
+const trackSelect = document.getElementById('music-track');
 
 const displayEventName = document.getElementById('display-event-name');
 const displayTargetDatetime = document.getElementById('display-target-datetime');
@@ -118,6 +121,7 @@ function saveState() {
       celebrated: !!appState.celebrated,
       danceStyle: appState.danceStyle || 'groove',
       musicEnabled: !!appState.musicEnabled,
+      musicTrack: appState.musicTrack || 'random',
     }));
   } catch (e) {}
 }
@@ -146,19 +150,116 @@ function knownDance(id) {
   return runtime.dances.some((dance) => dance.id === id) ? id : 'groove';
 }
 
-function armMusic() {
-  if (musicArmed || !appState.musicEnabled) return;
-  musicArmed = true;
-  const start = (event) => {
-    const element = event.target instanceof Element ? event.target : null;
-    const button = element && element.closest('button');
-    if (button && (button.id === 'btn-music-toggle' || button.id === 'btn-fs-music')) return;
-    document.removeEventListener('pointerdown', start);
-    if (!RetroSynthMusicEngine.isPlaying) {
-      RetroSynthMusicEngine.start({ quiet: true });
+function knownTrack(id) {
+  if (id === 'random') return 'random';
+  return MUSIC_TRACKS.some((track) => track.id === id) ? id : 'random';
+}
+
+function fillTrackSelect(select) {
+  if (!select) return;
+  select.replaceChildren();
+  const randomOption = document.createElement('option');
+  randomOption.value = 'random';
+  randomOption.textContent = 'Satunnainen';
+  select.appendChild(randomOption);
+  for (const track of MUSIC_TRACKS) {
+    const option = document.createElement('option');
+    option.value = track.id;
+    option.textContent = `${track.name} — ${track.description}`;
+    select.appendChild(option);
+  }
+}
+
+function selectedTrackId() {
+  const value = trackSelect ? trackSelect.value : 'random';
+  return knownTrack(value);
+}
+
+function trackTitle(id) {
+  const track = MUSIC_TRACKS.find((item) => item.id === id);
+  return track ? track.name : 'Raita';
+}
+
+function refreshMusicControls() {
+  const sounding = Boolean(currentTrack()) && !isMuted();
+  const label = sounding ? '🔇 Mykistä' : '🔊 Ääni päälle';
+  [btnMusicToggle, btnFsMusic].forEach((button) => {
+    if (!button) return;
+    button.textContent = label;
+    button.setAttribute('aria-pressed', sounding ? 'true' : 'false');
+    button.classList.toggle('bg-[#06D6A0]', sounding);
+    button.classList.toggle('bg-[#FFD166]', !sounding);
+  });
+  const name = trackTitle(runtime.resolvedTrackId);
+  const trackLabel = document.getElementById('track-label');
+  if (trackLabel) trackLabel.textContent = name;
+  const fsNext = document.getElementById('btn-fs-next');
+  if (fsNext) fsNext.textContent = `⏭ ${name}`;
+}
+
+function showStartOverlay() {
+  runtime.performanceStarted = false;
+  runtime.resolvedTrackId = resolveTrackId(appState.musicTrack);
+  document.documentElement.classList.add('awaiting-start');
+  const title = document.getElementById('start-overlay-title');
+  const button = document.getElementById('btn-start-counter');
+  const name = appState.eventName || 'Ajastin';
+  if (title) title.textContent = name;
+  if (button) {
+    button.setAttribute('aria-label', `Aloita: ${name}`);
+    button.focus();
+  }
+  refreshMusicControls();
+}
+
+async function beginPerformance() {
+  if (runtime.performanceStarted) return;
+  runtime.performanceStarted = true;
+  document.documentElement.classList.remove('awaiting-start');
+  try {
+    await unlockAudio();
+    if (appState.musicEnabled && !isMuted()) {
+      const compiled = await startTrack(runtime.resolvedTrackId);
+      if (compiled) runtime.resolvedTrackId = compiled.id;
     }
-  };
-  document.addEventListener('pointerdown', start);
+  } catch (e) {
+    showToast('Ääntä ei saatu käynnistettyä.');
+  }
+  refreshMusicControls();
+  updateTimerTick();
+}
+
+async function onToggleMute() {
+  if (!runtime.performanceStarted) return;
+  const sounding = Boolean(currentTrack()) && !isMuted();
+  if (sounding) {
+    setMusicMuted(true);
+  } else {
+    setMusicMuted(false);
+    appState.musicEnabled = true;
+    try {
+      if (!currentTrack()) {
+        const compiled = await startTrack(runtime.resolvedTrackId);
+        if (compiled) runtime.resolvedTrackId = compiled.id;
+      }
+    } catch (e) {
+      showToast('Ääntä ei saatu käynnistettyä.');
+    }
+  }
+  refreshMusicControls();
+}
+
+async function onNextTrack() {
+  if (!runtime.performanceStarted) return;
+  try {
+    if (!currentTrack()) await unlockAudio();
+    const compiled = await playNext();
+    if (compiled) runtime.resolvedTrackId = compiled.id;
+    if (isMuted()) setMusicMuted(true);
+  } catch (e) {
+    showToast('Raitaa ei voitu vaihtaa.');
+  }
+  refreshMusicControls();
 }
 
 function enterCleanFullscreen(requestNative = false) {
@@ -272,6 +373,7 @@ function updateTimerTick() {
   progressBar.style.width = `${pct}%`;
   progressPercent.textContent = remainingMs === 0 ? '100% — Perillä!' : `${pct}% matkasta kuljettu`;
   if (progressTrack) progressTrack.setAttribute('aria-valuenow', String(pct));
+  if (!runtime.performanceStarted) return;
 
   const startLeftPct = 4;
   const maxLeftPct = window.innerWidth < 640 ? 52 : 66;
@@ -294,9 +396,9 @@ function updateTimerTick() {
 
   const dance = activeDance();
   if (metaDance && dance) metaDance.textContent = dance.name;
-  stageCharacter.classList.toggle('mood-cheerful', runtime.currentMood === 'cheerful');
+  stageCharacter.classList.toggle('mood-cheerful', runtime.currentMood === 'cheerful' && !(dance && dance.walkClass));
   stageCharacter.classList.toggle('mood-dance', runtime.currentMood === 'dance');
-  if (dance) applyDanceClass(stageCharacter, dance, runtime.dances);
+  if (dance) applyPerformanceClasses(stageCharacter, dance, runtime.dances, runtime.currentMood);
   musicNotes.classList.toggle('hidden', runtime.currentMood !== 'dance' && runtime.currentMood !== 'celebrate');
 
   const pose = runtime.currentMood === 'celebrate'
@@ -314,7 +416,7 @@ function updateTimerTick() {
       appState.celebrated = true;
       saveState();
       triggerConfetti();
-      RetroSynthMusicEngine.playVictoryFanfare();
+      playFanfare();
     }
     if (runtime.tickInterval) {
       clearInterval(runtime.tickInterval);
@@ -334,7 +436,7 @@ async function startTimerView() {
   displayTargetDatetime.textContent = `Tavoiteaika: ${targetDate.toLocaleDateString('fi-FI')} klo ${pad2(targetDate.getHours())}:${pad2(targetDate.getMinutes())}`;
 
   const dance = activeDance();
-  if (dance) applyDanceClass(stageCharacter, dance, runtime.dances);
+  if (dance) applyPerformanceClasses(stageCharacter, dance, runtime.dances, 'walk');
   await renderScene({
     stageEnvironment,
     stageGoal,
@@ -345,6 +447,7 @@ async function startTimerView() {
   });
   if (metaDance && dance) metaDance.textContent = dance.name;
   updateTimeOfDayLighting();
+  showStartOverlay();
   updateTimerTick();
 
   if (!runtime.lightingInterval) {
@@ -354,11 +457,6 @@ async function startTimerView() {
   }
   if (runtime.tickInterval) clearInterval(runtime.tickInterval);
   runtime.tickInterval = setInterval(updateTimerTick, 500);
-
-  if (appState.musicEnabled) {
-    showToast('Musiikki käynnistyy, kun napautat sivua.');
-    armMusic();
-  }
 }
 
 function toggleCounterMode() {
@@ -406,6 +504,7 @@ async function bootRemote(slug) {
     counterMode,
     danceStyle: knownDance(counter.danceStyle),
     musicEnabled: !!counter.musicEnabled,
+    musicTrack: knownTrack(counter.musicTrack),
     celebrated: false,
     slug: counter.slug,
     scene: resolveScene(),
@@ -429,6 +528,7 @@ function beginLocalTimer({ name, targetTimeMs, toast }) {
     celebrated: false,
     danceStyle: selectedDanceId(),
     musicEnabled: musicInput.checked,
+    musicTrack: selectedTrackId(),
     slug: null,
   };
   if (FEATURE_FLAGS.allowCustomScene) {
@@ -507,8 +607,11 @@ document.addEventListener('fullscreenchange', () => {
   }
 });
 
-btnMusicToggle.addEventListener('click', () => RetroSynthMusicEngine.toggle());
-btnFsMusic.addEventListener('click', () => RetroSynthMusicEngine.toggle());
+btnMusicToggle.addEventListener('click', () => { onToggleMute(); });
+btnFsMusic.addEventListener('click', () => { onToggleMute(); });
+document.getElementById('btn-next-track').addEventListener('click', () => { onNextTrack(); });
+document.getElementById('btn-fs-next').addEventListener('click', () => { onNextTrack(); });
+document.getElementById('btn-start-counter').addEventListener('click', () => { beginPerformance(); });
 btnFullscreen.addEventListener('click', () => enterCleanFullscreen(true));
 btnShareLink.addEventListener('click', shareCurrentTimer);
 btnFsShare.addEventListener('click', shareCurrentTimer);
@@ -533,10 +636,12 @@ btnNewEvent.addEventListener('click', () => {
   timerView.classList.add('hidden');
   setupView.classList.remove('hidden');
   document.documentElement.classList.remove('is-ready');
+  document.documentElement.classList.remove('awaiting-start');
   if (appState.eventName) eventNameInput.value = appState.eventName;
   if (appState.targetTimeMs) setFormDateTime(new Date(appState.targetTimeMs));
   danceSelect.value = knownDance(appState.danceStyle);
   musicInput.checked = !!appState.musicEnabled;
+  if (trackSelect) trackSelect.value = knownTrack(appState.musicTrack);
 });
 
 window.addEventListener('resize', () => {
@@ -549,6 +654,7 @@ async function boot() {
   runtime.dances = await loadAllDances();
   for (const dance of runtime.dances) ensureDanceStylesheet(dance);
   fillDanceSelect();
+  fillTrackSelect(trackSelect);
 
   const slug = getPublicSlug();
   if (slug) {
@@ -561,6 +667,8 @@ async function boot() {
   if (shared) {
     appState = { ...shared.state, scene: resolveScene() };
     danceSelect.value = appState.danceStyle;
+    if (trackSelect) trackSelect.value = knownTrack(appState.musicTrack);
+    musicInput.checked = appState.musicEnabled !== false;
     await startTimerView();
     if (shared.isFullscreen) enterCleanFullscreen(false);
     return;
@@ -576,11 +684,13 @@ async function boot() {
       scene: saved.scene,
       celebrated: !!saved.celebrated,
       danceStyle: knownDance(saved.danceStyle),
-      musicEnabled: !!saved.musicEnabled,
+      musicEnabled: saved.musicEnabled !== false,
+      musicTrack: knownTrack(saved.musicTrack),
       slug: null,
     };
     danceSelect.value = appState.danceStyle;
     musicInput.checked = appState.musicEnabled;
+    if (trackSelect) trackSelect.value = knownTrack(appState.musicTrack);
     await startTimerView();
     return;
   }

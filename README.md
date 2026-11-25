@@ -14,6 +14,7 @@ public/                 sivuston juuri (Pagesin build-output)
   js/                   sovellus, musiikki, valaistus, jakaminen
   assets/               hahmo, auto ja piha
   dances/               tanssityylit ja rekisteri
+  music/                taustaraidat ja rekisteri
 functions/              Cloudflare Pages Functions
   api/auth/             kirjautuminen, uloskirjautuminen, istunto
   api/admin/counters/   laskureiden listaus, luonti, muokkaus, poisto
@@ -31,14 +32,15 @@ Paikallinen ajastin tallentuu yhä selaimeen avaimella `ahlsell_comic_timer_stat
 ## Julkinen käyttö
 
 1. Etusivulla annat tapahtuman nimen, päivän, kellonajan, tanssityylin ja halutessasi musiikin.
-2. **Käynnistä matka**. Hahmo etenee pihalla jäljellä olevan ajan mukaan.
-3. Napauta laskuria tai paina **M**, niin näkymä vaihtuu päivien ja pelkkien tuntien välillä.
-4. **Koko näyttö** sopii jaettavaksi. Poistuminen jättää jakolinkin parametrit osoitteeseen (vain `view=full` poistuu).
-5. **Jaa linkki** käyttää `navigator.clipboard`:ia, sitten `navigator.share`:a, ja viimeisenä `document.execCommand('copy')`.
+2. **Käynnistä matka** avaa laskurin. Hahmo ja musiikki odottavat vielä aloitusnappia.
+3. Laskurinäkymässä iso aloitusnappi näyttää tapahtuman nimen. Hahmo ja taustamusiikki pysyvät paikallaan, kunnes nappia painetaan. Painallus myös avaa selaimen äänen. Sen jälkeen nappi katoaa.
+4. Napauta laskuria tai paina **M**, niin näkymä vaihtuu päivien ja pelkkien tuntien välillä. **Mykistä** muistaa valinnan tässä selaimessa. **Seuraava** vaihtaa taustaraitaa.
+5. **Koko näyttö** sopii jaettavaksi. Poistuminen jättää jakolinkin parametrit osoitteeseen (vain `view=full` poistuu).
+6. **Jaa linkki** käyttää `navigator.clipboard`:ia, sitten `navigator.share`:a, ja viimeisenä `document.execCommand('copy')`.
 
 Viimeisen vuorokauden aikana hahmo tanssii valitulla tyylillä. Jos koko matka on alle vuorokauden, tanssi alkaa kun matkasta on kulunut noin 72 %. Saapuminen tuo konfetin. `prefers-reduced-motion` pysäyttää animaatiot ja konfetin. Laskurin muutokset ja ilmoitukset luetaan `aria-live`-alueelta.
 
-Vanha jakolinkki toimii yhä etusivulla: `?n=<nimi>&s=<aloitus-ms>&t=<maali-ms>&m=d|h&view=full`. Uusi valinnainen parametri on `d=<tanssityyli>`. Ilman sitä tyyli on groovi.
+Vanha jakolinkki toimii yhä etusivulla: `?n=<nimi>&s=<aloitus-ms>&t=<maali-ms>&m=d|h&view=full`. Valinnainen `d` on tanssityyli (oletus groovi) ja valinnainen `k` on taustaraita (`random` tai raidan tunnus).
 
 ## Tanssityylin lisääminen
 
@@ -49,7 +51,36 @@ Jokainen tyyli on oma moduuli kansiossa `public/dances/`. Rekisteri on `public/d
 3. Osoita `svgUrl` uuteen piirrokseen `public/assets/`-kansiossa tai käytä olemassa olevaa SVG:tä.
 4. Lisää yksi rivi `public/dances/registry.js`-tiedostoon: `id`, suomenkielinen `name`, `description` ja `module`.
 
-Muuta koodia tai tietokantaa ei tarvitse muuttaa. Ylläpidon pudotusvalikko ja julkinen lomake lukevat rekisterin. Valmiit esimerkit ovat **Groovi** (`groove`) ja **Robotti** (`robot`).
+Muuta koodia tai tietokantaa ei tarvitse muuttaa. Ylläpidon pudotusvalikko, julkinen lomake ja parametri `d` lukevat rekisterin.
+
+Valmiit tyylit:
+
+| Tunnus | Nimi | Kävely |
+| --- | --- | --- |
+| `groove` | Groovi | tavallinen kävely |
+| `robot` | Robotti | tavallinen kävely |
+| `disco` | Disco | pomppiva kävely |
+| `toprock` | Breikki | ripeä kävely |
+| `macarena` | Macarena | tavallinen kävely |
+| `twist` | Twist | ripeä kävely |
+| `hop` | Hyppy | hyppely |
+| `moonwalk` | Moonwalk | liukuva moonwalk |
+
+Kävelyanimaatio näkyy matkan aikana ja tanssi viimeisenä päivänä. Uuden tyylin CSS kannattaa animoida vain `transform`- ja `opacity`-ominaisuuksia, jotta puhelin pysyy kevyenä. Halutessasi voit laittaa moduuliin `walkClass`-luokan, joka vaihtaa kävelysyklin.
+
+## Taustamusiikki
+
+Raidat ovat Tone.js-määrittelyjä kansiossa `public/music/`. Rekisteri on `public/music/registry.js`. Jokainen raita on noin kolme minuuttia: intro, A- ja B-jaksot, silta ja kertaus, ja se kiertää puhtaasti alkuun. Musiikki on hiljaisemmalla väylällä kuin maalifanfaari.
+
+1. Kopioi `public/music/pihapolku.js` nimelle `public/music/<id>.js`.
+2. Vaihda `bpm`, sointukulku (`chords`) ja motiivi. `public/music/sequence.js` rakentaa basson, arpeggion, rummut ja variaatiot.
+3. Lisää yksi rivi `public/music/registry.js`-tiedostoon.
+
+Ylläpito valitsee laskurille raidan tai arvon **Satunnainen** (`random`). Valinta tallentuu sarakkeeseen `music_track`. Kuulija voi mykistää äänen tai vaihtaa seuraavaan raitaan. Mykistys muistetaan selaimen `localStorage`-avaimessa `ahlsell_comic_music_muted`.
+
+Valmiit raidat: **Pihapolku** (`pihapolku`), **Yövuoro** (`yovuoro`) ja **Maaliviiva** (`maaliviiva`).
+
+Ennen tuotantojulkaisua aja migraatio `migrations/0002_music_track.sql`. Se lisää sarakkeen `music_track` oletuksella `random`. Vanhat laskurit säilyvät, ja niiden musiikkivalinta pysyy ennallaan. Paikallisesti: `npm run db:migrate:local`. Tuotantoon: `npm run db:migrate:remote`.
 
 ## Ylläpito
 
@@ -58,7 +89,7 @@ Avaa `/admin`. Salasana ei ole koodissa: paikallisesti se on `.dev.vars`-tiedost
 Kirjautumisen jälkeen voit:
 
 - listata laskurit
-- luoda laskurin (nimi, maali, valinnainen aloitus, musiikki, tanssityyli, laskurin näyttö, valinnainen osoite)
+- luoda laskurin (nimi, maali, valinnainen aloitus, musiikki, taustaraita tai satunnainen, tanssityyli, laskurin näyttö, valinnainen osoite)
 - muokata ja poistaa (poisto kysyy vahvistuksen samasta napista)
 - kopioida julkisen osoitteen ja avata sen
 
@@ -102,7 +133,7 @@ npx wrangler pages deploy public --project-name laskuri --branch preview
 
 Ylläpito on `/admin` ja yksittäinen laskuri `/l/<slug>` saman osoitteen perässä. Esimerkiksi esikatselun ylläpito on https://preview.laskuri-89s.pages.dev/admin.
 
-D1-kanta `laskuri` on olemassa ja migraatio `0001_init.sql` on ajettu. Bindingin nimi on `DB`, `database_id` on `7bd16b1f-8382-4763-a81a-661f7a5d1954`. Taulut `counters` ja `login_attempts` ovat kannassa. Uutta kantaa ei luoda eikä tätä migraatiota ajeta uudelleen. Myöhempi migraatio ajetaan komennolla `npm run db:migrate:remote`. Paikallinen kanta alustetaan yhä komennolla `npm run db:migrate:local`.
+D1-kanta `laskuri` on olemassa ja migraatio `0001_init.sql` on ajettu. Bindingin nimi on `DB`, `database_id` on `7bd16b1f-8382-4763-a81a-661f7a5d1954`. Taulut `counters` ja `login_attempts` ovat kannassa. Uutta kantaa ei luoda eikä `0001`:tä ajeta uudelleen. Taustaraidan sarake tulee migraatiosta `0002_music_track.sql`, joka pitää ajaa kerran komennolla `npm run db:migrate:remote` ennen kuin ylläpito tallentaa raitoja tuotantoon. Paikallinen kanta päivitetään komennolla `npm run db:migrate:local`.
 
 Salaisuudet `ADMIN_PASSWORD` ja `SESSION_SECRET` on asetettu sekä tuotantoon että esikatseluun. Niitä ei ole repossa eikä `wrangler.toml`-tiedostossa. Uudelleenasetus:
 

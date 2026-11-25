@@ -56,10 +56,19 @@ export async function renderScene(nodes) {
 }
 
 export function applyDanceClass(element, dance, dances) {
+  applyPerformanceClasses(element, dance, dances, 'dance');
+}
+
+export function applyPerformanceClasses(element, dance, dances, mood) {
   for (const item of dances) {
     if (item.rootClass) element.classList.remove(item.rootClass);
+    if (item.walkClass) element.classList.remove(item.walkClass);
   }
-  if (dance && dance.rootClass) element.classList.add(dance.rootClass);
+  if (!dance) return;
+  if (mood === 'dance' && dance.rootClass) element.classList.add(dance.rootClass);
+  else if ((mood === 'walk' || mood === 'cheerful') && dance.walkClass) {
+    element.classList.add(dance.walkClass);
+  }
 }
 
 export async function setCharacterPose(stageCharacter, pose, dance) {

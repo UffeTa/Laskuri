@@ -1,3 +1,10 @@
+import { MUSIC_TRACKS, RANDOM_TRACK_ID } from '../music/registry.js';
+
+function knownShareTrack(id) {
+  if (!id || id === RANDOM_TRACK_ID) return RANDOM_TRACK_ID;
+  return MUSIC_TRACKS.some((track) => track.id === id) ? id : RANDOM_TRACK_ID;
+}
+
 export function isTemporaryPreviewUrl() {
   const proto = location.protocol;
   return proto === 'blob:' || proto === 'about:' || proto === 'data:';
@@ -58,6 +65,7 @@ export function syncUrlFromState(state, { fullscreen, forceIdentity }) {
       params.set('s', String(state.startTimeMs || Date.now()));
       params.set('t', String(state.targetTimeMs || Date.now()));
       params.set('d', state.danceStyle || 'groove');
+      params.set('k', state.musicTrack || 'random');
     }
     if (params.has('t') || fullscreen || state.slug) {
       params.set('m', state.counterMode === 'hours_seconds' ? 'h' : 'd');
@@ -81,6 +89,7 @@ export function buildShareUrl(state) {
   params.set('t', String(state.targetTimeMs || Date.now()));
   params.set('m', mode);
   params.set('d', state.danceStyle || 'groove');
+  params.set('k', state.musicTrack || 'random');
   if (!isHttpPage()) {
     return `${location.href.split('#')[0].split('?')[0]}#${params.toString()}`;
   }
@@ -106,7 +115,8 @@ export function parseLegacyShare(danceIds) {
       targetTimeMs,
       counterMode: params.get('m') === 'h' ? 'hours_seconds' : 'days_hours_seconds',
       danceStyle: danceIds.includes(requestedDance) ? requestedDance : 'groove',
-      musicEnabled: false,
+      musicEnabled: true,
+      musicTrack: knownShareTrack(params.get('k')),
       celebrated: false,
       slug: null,
     },

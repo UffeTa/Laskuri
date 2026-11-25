@@ -1,4 +1,5 @@
 import { DANCE_STYLES } from '../dances/registry.js';
+import { MUSIC_TRACKS, RANDOM_TRACK_ID } from '../music/registry.js';
 import { copyOrShare } from '../js/share.js';
 
 const loginPanel = document.getElementById('login-panel');
@@ -11,6 +12,7 @@ const counterList = document.getElementById('counter-list');
 const counterForm = document.getElementById('counter-form');
 const formTitle = document.getElementById('form-title');
 const danceSelect = document.getElementById('field-dance');
+const trackSelect = document.getElementById('field-track');
 const submitButton = document.getElementById('btn-save');
 
 let editingSlug = null;
@@ -72,6 +74,26 @@ function danceName(id) {
   return dance ? dance.name : id;
 }
 
+function trackName(id) {
+  if (!id || id === RANDOM_TRACK_ID) return 'Satunnainen';
+  const track = MUSIC_TRACKS.find((item) => item.id === id);
+  return track ? track.name : 'Satunnainen';
+}
+
+function fillTracks() {
+  trackSelect.replaceChildren();
+  const randomOption = document.createElement('option');
+  randomOption.value = RANDOM_TRACK_ID;
+  randomOption.textContent = 'Satunnainen';
+  trackSelect.appendChild(randomOption);
+  for (const track of MUSIC_TRACKS) {
+    const option = document.createElement('option');
+    option.value = track.id;
+    option.textContent = `${track.name} — ${track.description}`;
+    trackSelect.appendChild(option);
+  }
+}
+
 function formatWhen(ms) {
   const date = new Date(ms);
   return `${date.toLocaleDateString('fi-FI')} klo ${pad2(date.getHours())}:${pad2(date.getMinutes())}`;
@@ -107,6 +129,8 @@ function resetForm() {
   formTitle.textContent = 'Uusi laskuri';
   submitButton.textContent = 'Luo laskuri';
   danceSelect.value = 'groove';
+  trackSelect.value = RANDOM_TRACK_ID;
+  document.getElementById('field-music').checked = true;
   document.getElementById('field-mode').value = 'days_hours_seconds';
 }
 
@@ -121,6 +145,7 @@ function fillForm(counter) {
   document.getElementById('field-start-date').value = dateValue(counter.startTimeMs);
   document.getElementById('field-start-time').value = timeValue(counter.startTimeMs);
   document.getElementById('field-music').checked = !!counter.musicEnabled;
+  trackSelect.value = MUSIC_TRACKS.some((track) => track.id === counter.musicTrack) ? counter.musicTrack : RANDOM_TRACK_ID;
   danceSelect.value = DANCE_STYLES.some((dance) => dance.id === counter.danceStyle) ? counter.danceStyle : 'groove';
   document.getElementById('field-mode').value = counter.counterMode === 'hours_seconds'
     ? 'hours_seconds'
@@ -156,7 +181,7 @@ function renderList() {
 
     const meta = document.createElement('p');
     meta.className = 'text-sm font-semibold text-slate-700';
-    meta.textContent = `Maali ${formatWhen(counter.targetTimeMs)} · aloitus ${formatWhen(counter.startTimeMs)} · ${danceName(counter.danceStyle)} · musiikki ${counter.musicEnabled ? 'päällä' : 'pois'}`;
+    meta.textContent = `Maali ${formatWhen(counter.targetTimeMs)} · aloitus ${formatWhen(counter.startTimeMs)} · ${danceName(counter.danceStyle)} · ${trackName(counter.musicTrack)} · musiikki ${counter.musicEnabled ? 'päällä' : 'pois'}`;
 
     const link = document.createElement('a');
     link.href = `/l/${encodeURIComponent(counter.slug)}`;
@@ -274,6 +299,7 @@ counterForm.addEventListener('submit', async (event) => {
     name,
     targetTimeMs: target.ms,
     musicEnabled: document.getElementById('field-music').checked,
+    musicTrack: trackSelect.value,
     danceStyle: danceSelect.value,
     counterMode: document.getElementById('field-mode').value,
   };
@@ -302,6 +328,7 @@ counterForm.addEventListener('submit', async (event) => {
 });
 
 fillDances();
+fillTracks();
 resetForm();
 
 try {

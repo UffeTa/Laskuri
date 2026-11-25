@@ -300,6 +300,70 @@ html.wants-fullscreen #boot-status {
     z-index: 50;
 }
 
+#start-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 70;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+    background: rgba(9, 13, 26, 0.72);
+}
+
+html.awaiting-start #start-overlay {
+    display: flex;
+}
+
+#btn-start-counter {
+    width: min(92vw, 640px);
+    background: #FFD166;
+    color: #141414;
+    border-radius: 1.5rem;
+    padding: 1.5rem 1.75rem 1.25rem;
+    cursor: pointer;
+    text-align: center;
+}
+
+#btn-start-counter #start-overlay-kicker {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 0.35rem;
+}
+
+#btn-start-counter #start-overlay-title {
+    display: block;
+    font-family: 'Bangers', cursive;
+    font-size: clamp(2.4rem, 8vw, 4.6rem);
+    line-height: 0.95;
+    letter-spacing: 0.04em;
+    overflow-wrap: anywhere;
+}
+
+html.awaiting-start .anim-walk-body,
+html.awaiting-start .anim-leg-front,
+html.awaiting-start .anim-leg-back,
+html.awaiting-start .anim-arm-front,
+html.awaiting-start .anim-arm-back,
+html.awaiting-start .anim-wave,
+html.awaiting-start .anim-dance-body,
+html.awaiting-start .anim-dance-arm-l,
+html.awaiting-start .anim-dance-arm-r,
+html.awaiting-start .anim-dance-leg-l,
+html.awaiting-start .anim-dance-leg-r,
+html.awaiting-start .cloud-slow,
+html.awaiting-start .cloud-fast,
+html.awaiting-start .star-twinkle,
+html.awaiting-start .music-note,
+html.awaiting-start .confetti-piece,
+html.awaiting-start #character-wrapper {
+    animation-play-state: paused !important;
+    transition: none !important;
+}
+
 @media (prefers-reduced-motion: reduce) {
     *,
     *::before,
