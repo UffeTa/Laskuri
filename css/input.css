@@ -342,6 +342,11 @@ html.awaiting-start #start-overlay {
     text-align: center;
 }
 
+#btn-start-counter:disabled {
+    cursor: progress;
+    opacity: 0.72;
+}
+
 #btn-start-counter #start-overlay-kicker {
     display: block;
     font-size: 0.8rem;

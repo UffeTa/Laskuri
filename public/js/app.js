@@ -39,6 +39,7 @@ let appState = {
 
 let poseErrorShown = false;
 let sceneReady = false;
+let startGeneration = 0;
 
 const setupView = document.getElementById('setup-view');
 const timerView = document.getElementById('timer-view');
@@ -250,6 +251,7 @@ function showStartOverlay() {
   sceneReady = false;
   resolveVisitChoices();
   document.documentElement.classList.add('awaiting-start');
+  const overlay = document.getElementById('start-overlay');
   const title = document.getElementById('start-overlay-title');
   const button = document.getElementById('btn-start-counter');
   const name = appState.eventName || 'Ajastin';
@@ -258,6 +260,7 @@ function showStartOverlay() {
     button.disabled = true;
     button.setAttribute('aria-label', `Aloita: ${name}`);
   }
+  if (overlay) overlay.focus();
   refreshMusicControls();
 }
 
@@ -480,7 +483,9 @@ function updateTimerTick() {
 }
 
 async function startTimerView() {
+  const generation = ++startGeneration;
   setupView.classList.add('hidden');
+  setupView.inert = true;
   timerView.classList.remove('hidden');
   document.documentElement.classList.add('is-ready');
   btnNewEvent.classList.toggle('hidden', Boolean(appState.slug));
@@ -490,22 +495,32 @@ async function startTimerView() {
   displayTargetDatetime.textContent = `Tavoiteaika: ${targetDate.toLocaleDateString('fi-FI')} klo ${pad2(targetDate.getHours())}:${pad2(targetDate.getMinutes())}`;
 
   showStartOverlay();
-  const dance = activeDance();
-  if (dance) applyPerformanceClasses(stageCharacter, dance, runtime.dances, 'dance');
-  await renderScene({
-    stageEnvironment,
-    stageGoal,
-    stageCharacter,
-    metaCharacter,
-    metaGoal,
-    metaEnvironment,
-  });
-  if (metaDance && dance) metaDance.textContent = dance.name;
-  if (dance) {
-    await setCharacterPose(stageCharacter, visiblePose('walk'), dance);
-    applyPerformanceClasses(stageCharacter, dance, runtime.dances, 'dance');
+  let sceneLoaded = true;
+  try {
+    const dance = activeDance();
+    if (dance) applyPerformanceClasses(stageCharacter, dance, runtime.dances, 'dance');
+    await renderScene({
+      stageEnvironment,
+      stageGoal,
+      stageCharacter,
+      metaCharacter,
+      metaGoal,
+      metaEnvironment,
+    });
+    if (generation !== startGeneration) return false;
+    if (metaDance && dance) metaDance.textContent = dance.name;
+    if (dance) {
+      await setCharacterPose(stageCharacter, visiblePose('walk'), dance);
+      if (generation !== startGeneration) return false;
+      applyPerformanceClasses(stageCharacter, dance, runtime.dances, 'dance');
+    }
+    updateTimeOfDayLighting();
+  } catch (error) {
+    if (generation !== startGeneration) return false;
+    sceneLoaded = false;
+    showToast('Näyttämöä ei saatu ladattua.');
   }
-  updateTimeOfDayLighting();
+  if (generation !== startGeneration) return false;
   enableStartOverlay();
   updateTimerTick();
 
@@ -516,6 +531,7 @@ async function startTimerView() {
   }
   if (runtime.tickInterval) clearInterval(runtime.tickInterval);
   runtime.tickInterval = setInterval(updateTimerTick, 500);
+  return sceneLoaded;
 }
 
 function toggleCounterMode() {
@@ -578,6 +594,7 @@ async function bootRemote(slug) {
 }
 
 function beginLocalTimer({ name, targetTimeMs, toast }) {
+  if (!timerView.classList.contains('hidden')) return;
   const nowMs = Date.now();
   if (targetTimeMs <= nowMs) {
     showToast('Valitse tulevaisuudessa oleva ajankohta!');
@@ -602,8 +619,8 @@ function beginLocalTimer({ name, targetTimeMs, toast }) {
     appState.scene = resolveScene();
   }
   saveState();
-  startTimerView().then(() => {
-    if (toast) showToast(toast);
+  startTimerView().then((loaded) => {
+    if (loaded && toast) showToast(toast);
   }).catch(() => {
     showToast('Näyttämöä ei saatu ladattua.');
   });
@@ -700,12 +717,15 @@ if (btnResetLighting) {
 }
 
 btnNewEvent.addEventListener('click', () => {
+  startGeneration += 1;
+  sceneReady = false;
   if (runtime.tickInterval) {
     clearInterval(runtime.tickInterval);
     runtime.tickInterval = null;
   }
   timerView.classList.add('hidden');
   setupView.classList.remove('hidden');
+  setupView.inert = false;
   document.documentElement.classList.remove('is-ready');
   document.documentElement.classList.remove('awaiting-start');
   if (appState.eventName) eventNameInput.value = appState.eventName;
@@ -773,6 +793,10 @@ async function boot() {
 }
 
 boot().catch(() => {
+  startGeneration += 1;
+  sceneReady = false;
+  document.documentElement.classList.remove('awaiting-start');
+  if (setupView) setupView.inert = false;
   showToast('Sivun käynnistys epäonnistui.');
   showBootError('Laskuria ei saatu käynnistettyä.');
 });
