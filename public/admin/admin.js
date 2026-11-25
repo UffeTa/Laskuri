@@ -73,13 +73,15 @@ function fillDances() {
   }
 }
 
-function danceName(id) {
+function danceName(counter) {
+  const id = counter && counter.danceLocked ? counter.danceStyle : 'random';
   if (!id || id === 'random') return 'Satunnainen';
   const dance = DANCE_STYLES.find((item) => item.id === id);
   return dance ? dance.name : 'Satunnainen';
 }
 
-function trackName(id) {
+function trackName(counter) {
+  const id = counter && counter.musicLocked ? counter.musicTrack : RANDOM_TRACK_ID;
   if (!id || id === RANDOM_TRACK_ID) return 'Satunnainen';
   const track = MUSIC_TRACKS.find((item) => item.id === id);
   return track ? track.name : 'Satunnainen';
@@ -150,8 +152,12 @@ function fillForm(counter) {
   document.getElementById('field-start-date').value = dateValue(counter.startTimeMs);
   document.getElementById('field-start-time').value = timeValue(counter.startTimeMs);
   document.getElementById('field-music').checked = !!counter.musicEnabled;
-  trackSelect.value = MUSIC_TRACKS.some((track) => track.id === counter.musicTrack) ? counter.musicTrack : RANDOM_TRACK_ID;
-  danceSelect.value = DANCE_STYLES.some((dance) => dance.id === counter.danceStyle) ? counter.danceStyle : 'random';
+  trackSelect.value = counter.musicLocked && MUSIC_TRACKS.some((track) => track.id === counter.musicTrack)
+    ? counter.musicTrack
+    : RANDOM_TRACK_ID;
+  danceSelect.value = counter.danceLocked && DANCE_STYLES.some((dance) => dance.id === counter.danceStyle)
+    ? counter.danceStyle
+    : 'random';
   document.getElementById('field-mode').value = counter.counterMode === 'hours_seconds'
     ? 'hours_seconds'
     : 'days_hours_seconds';
@@ -186,7 +192,7 @@ function renderList() {
 
     const meta = document.createElement('p');
     meta.className = 'text-sm font-semibold text-slate-700';
-    meta.textContent = `Maali ${formatWhen(counter.targetTimeMs)} · aloitus ${formatWhen(counter.startTimeMs)} · ${danceName(counter.danceStyle)} · ${trackName(counter.musicTrack)} · musiikki ${counter.musicEnabled ? 'päällä' : 'pois'}`;
+    meta.textContent = `Maali ${formatWhen(counter.targetTimeMs)} · aloitus ${formatWhen(counter.startTimeMs)} · ${danceName(counter)} · ${trackName(counter)} · musiikki ${counter.musicEnabled ? 'päällä' : 'pois'}`;
 
     const link = document.createElement('a');
     link.href = `/l/${encodeURIComponent(counter.slug)}`;

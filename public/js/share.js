@@ -1,4 +1,5 @@
 import { MUSIC_TRACKS, RANDOM_TRACK_ID } from '../music/registry.js';
+import { shareLockParams } from './visit-choice.js';
 
 function knownShareTrack(id) {
   if (!id || id === RANDOM_TRACK_ID) return RANDOM_TRACK_ID;
@@ -64,8 +65,18 @@ export function syncUrlFromState(state, { fullscreen, forceIdentity }) {
       params.set('n', (state.eventName || 'Ajastin').slice(0, 60));
       params.set('s', String(state.startTimeMs || Date.now()));
       params.set('t', String(state.targetTimeMs || Date.now()));
-      params.set('d', state.danceStyle || 'groove');
-      params.set('k', state.musicTrack || 'random');
+      const locks = shareLockParams(state);
+      if (locks.d) params.set('d', locks.d);
+      else if (!state.danceForced) params.delete('d');
+      if (locks.k) params.set('k', locks.k);
+      else params.delete('k');
+    }
+    if (state.slug) {
+      const locks = shareLockParams(state);
+      if (locks.d) params.set('d', locks.d);
+      else if (!state.danceForced) params.delete('d');
+      if (locks.k) params.set('k', locks.k);
+      else params.delete('k');
     }
     if (params.has('t') || fullscreen || state.slug) {
       params.set('m', state.counterMode === 'hours_seconds' ? 'h' : 'd');
@@ -80,6 +91,9 @@ export function buildShareUrl(state) {
     const url = new URL(`/l/${state.slug}`, location.origin);
     url.searchParams.set('view', 'full');
     url.searchParams.set('m', mode);
+    const locks = shareLockParams(state);
+    if (locks.d) url.searchParams.set('d', locks.d);
+    if (locks.k) url.searchParams.set('k', locks.k);
     return url.toString();
   }
   const params = new URLSearchParams();
@@ -88,8 +102,9 @@ export function buildShareUrl(state) {
   params.set('s', String(state.startTimeMs || Date.now()));
   params.set('t', String(state.targetTimeMs || Date.now()));
   params.set('m', mode);
-  params.set('d', state.danceStyle || 'groove');
-  params.set('k', state.musicTrack || 'random');
+  const locks = shareLockParams(state);
+  if (locks.d) params.set('d', locks.d);
+  if (locks.k) params.set('k', locks.k);
   if (!isHttpPage()) {
     return `${location.href.split('#')[0].split('?')[0]}#${params.toString()}`;
   }

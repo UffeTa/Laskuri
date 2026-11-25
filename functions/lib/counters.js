@@ -23,7 +23,9 @@ export function rowToCounter(row) {
     startTimeMs: Number(row.start_time_ms),
     musicEnabled: Number(row.music_enabled) === 1,
     musicTrack: row.music_track || RANDOM_TRACK_ID,
+    musicLocked: Number(row.music_locked) === 1,
     danceStyle: row.dance_style || 'random',
+    danceLocked: Number(row.dance_locked) === 1,
     counterMode: row.counter_mode,
     createdAt: Number(row.created_at),
     updatedAt: Number(row.updated_at),
@@ -72,6 +74,7 @@ export function parseCounterInput(data) {
   } else {
     value.musicTrack = data.musicTrack;
   }
+  value.musicLocked = value.musicTrack !== RANDOM_TRACK_ID;
 
   if (data.danceStyle === undefined || data.danceStyle === null || data.danceStyle === '') {
     value.danceStyle = 'random';
@@ -80,6 +83,7 @@ export function parseCounterInput(data) {
   } else {
     value.danceStyle = data.danceStyle;
   }
+  value.danceLocked = value.danceStyle !== 'random';
 
   const mode = data.counterMode || 'days_hours_seconds';
   if (!MODES.has(mode)) errors.push('Laskurin näyttötila on virheellinen.');
@@ -150,28 +154,45 @@ export async function createCounter(db, input) {
     return { error: 'Aloitusajan pitää olla ennen tavoiteaikaa.', status: 400 };
   }
   const now = Date.now();
+  const danceStyle = input.danceLocked ? input.danceStyle : 'random';
+  const musicTrack = input.musicLocked ? (input.musicTrack || RANDOM_TRACK_ID) : RANDOM_TRACK_ID;
+  const baseBinds = [
+    allocated.slug,
+    input.name,
+    input.targetTimeMs,
+    startTimeMs,
+    input.musicEnabled ? 1 : 0,
+    danceStyle,
+    input.counterMode,
+    musicTrack,
+    now,
+    now,
+  ];
   try {
     await db.prepare(`
       INSERT INTO counters (
-        slug, name, target_time_ms, start_time_ms, music_enabled, dance_style, counter_mode, music_track, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        slug, name, target_time_ms, start_time_ms, music_enabled, dance_style, counter_mode,
+        music_track, dance_locked, music_locked, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).bind(
-      allocated.slug,
-      input.name,
-      input.targetTimeMs,
-      startTimeMs,
-      input.musicEnabled ? 1 : 0,
-      input.danceStyle,
-      input.counterMode,
-      input.musicTrack || RANDOM_TRACK_ID,
+      ...baseBinds.slice(0, 8),
+      input.danceLocked ? 1 : 0,
+      input.musicLocked ? 1 : 0,
       now,
       now,
     ).run();
   } catch (error) {
-    if (String(error && error.message || error).includes('UNIQUE')) {
-      return { error: 'Osoite on jo käytössä.', status: 409 };
+    const message = String(error && error.message || error);
+    if (message.includes('UNIQUE')) return { error: 'Osoite on jo käytössä.', status: 409 };
+    if (message.includes('dance_locked') || message.includes('music_locked') || message.includes('no such column')) {
+      await db.prepare(`
+        INSERT INTO counters (
+          slug, name, target_time_ms, start_time_ms, music_enabled, dance_style, counter_mode, music_track, created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `).bind(...baseBinds).run();
+    } else {
+      throw error;
     }
-    throw error;
   }
   return { counter: await getCounter(db, allocated.slug) };
 }
@@ -187,11 +208,14 @@ export async function updateCounter(db, currentSlug, input) {
   if (startTimeMs >= input.targetTimeMs) {
     return { error: 'Aloitusajan pitää olla ennen tavoiteaikaa.', status: 400 };
   }
+  const danceStyle = input.danceLocked ? input.danceStyle : 'random';
+  const musicTrack = input.musicLocked ? (input.musicTrack || RANDOM_TRACK_ID) : RANDOM_TRACK_ID;
+  const updatedAt = Date.now();
   try {
     await db.prepare(`
       UPDATE counters
       SET slug = ?, name = ?, target_time_ms = ?, start_time_ms = ?, music_enabled = ?,
-          dance_style = ?, counter_mode = ?, music_track = ?, updated_at = ?
+          dance_style = ?, counter_mode = ?, music_track = ?, dance_locked = ?, music_locked = ?, updated_at = ?
       WHERE slug = ?
     `).bind(
       nextSlug,
@@ -199,17 +223,38 @@ export async function updateCounter(db, currentSlug, input) {
       input.targetTimeMs,
       startTimeMs,
       input.musicEnabled ? 1 : 0,
-      input.danceStyle,
+      danceStyle,
       input.counterMode,
-      input.musicTrack || RANDOM_TRACK_ID,
-      Date.now(),
+      musicTrack,
+      input.danceLocked ? 1 : 0,
+      input.musicLocked ? 1 : 0,
+      updatedAt,
       currentSlug,
     ).run();
   } catch (error) {
-    if (String(error && error.message || error).includes('UNIQUE')) {
-      return { error: 'Osoite on jo käytössä.', status: 409 };
+    const message = String(error && error.message || error);
+    if (message.includes('UNIQUE')) return { error: 'Osoite on jo käytössä.', status: 409 };
+    if (message.includes('dance_locked') || message.includes('music_locked') || message.includes('no such column')) {
+      await db.prepare(`
+        UPDATE counters
+        SET slug = ?, name = ?, target_time_ms = ?, start_time_ms = ?, music_enabled = ?,
+            dance_style = ?, counter_mode = ?, music_track = ?, updated_at = ?
+        WHERE slug = ?
+      `).bind(
+        nextSlug,
+        input.name,
+        input.targetTimeMs,
+        startTimeMs,
+        input.musicEnabled ? 1 : 0,
+        danceStyle,
+        input.counterMode,
+        musicTrack,
+        updatedAt,
+        currentSlug,
+      ).run();
+    } else {
+      throw error;
     }
-    throw error;
   }
   return { counter: await getCounter(db, nextSlug) };
 }

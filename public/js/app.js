@@ -1,5 +1,6 @@
 import { ensureDanceStylesheet, loadAllDances } from '../dances/index.js';
 import { MUSIC_TRACKS } from '../music/index.js';
+import { resolveChoice } from './visit-choice.js';
 import { updateTimeOfDayLighting } from './lighting.js';
 import { RetroSynthMusicEngine, setMusicNotifier } from './music.js';
 import { isMuted, playFanfare, playNext, setMusicMuted, startTrack, unlockAudio, currentTrack } from './playlist.js';
@@ -123,8 +124,10 @@ function saveState() {
       scene: appState.scene,
       celebrated: !!appState.celebrated,
       danceStyle: appState.danceStyle || 'random',
+      danceLocked: appState.danceLocked === true,
       musicEnabled: !!appState.musicEnabled,
       musicTrack: appState.musicTrack || 'random',
+      musicLocked: appState.musicLocked === true,
     }));
   } catch (e) {}
 }
@@ -162,35 +165,36 @@ function lastPickKey(kind) {
   return `ahlsell_last_${kind}_${appState.slug || 'paikallinen'}`;
 }
 
-function pickFresh(ids, kind) {
-  const key = lastPickKey(kind);
-  let last = '';
-  try { last = localStorage.getItem(key) || ''; } catch (e) {}
-  const pool = ids.filter((id) => id !== last);
-  const source = pool.length ? pool : ids;
-  const choice = source[Math.floor(Math.random() * source.length)];
-  try { localStorage.setItem(key, choice); } catch (e) {}
-  return choice;
+function readLastPick(kind) {
+  try { return localStorage.getItem(lastPickKey(kind)) || ''; } catch (e) { return ''; }
+}
+
+function rememberPick(kind, id) {
+  try { localStorage.setItem(lastPickKey(kind), id); } catch (e) {}
 }
 
 function resolveVisitChoices() {
   const danceIds = runtime.dances.map((dance) => dance.id);
-  if (appState.danceForced && danceIds.includes(appState.danceStyle)) {
-    runtime.resolvedDanceId = appState.danceStyle;
-  } else if (danceIds.includes(appState.danceStyle)) {
-    runtime.resolvedDanceId = appState.danceStyle;
-  } else {
-    runtime.resolvedDanceId = pickFresh(danceIds, 'dance');
-  }
-  try { localStorage.setItem(lastPickKey('dance'), runtime.resolvedDanceId); } catch (e) {}
+  const dance = resolveChoice({
+    forced: appState.danceForced,
+    locked: appState.danceLocked,
+    value: appState.danceStyle,
+    ids: danceIds,
+    previousId: readLastPick('dance'),
+  });
+  runtime.resolvedDanceId = dance.id;
+  rememberPick('dance', dance.id);
 
   const trackIds = MUSIC_TRACKS.map((track) => track.id);
-  if (trackIds.includes(appState.musicTrack)) {
-    runtime.resolvedTrackId = appState.musicTrack;
-  } else {
-    runtime.resolvedTrackId = pickFresh(trackIds, 'track');
-  }
-  try { localStorage.setItem(lastPickKey('track'), runtime.resolvedTrackId); } catch (e) {}
+  const track = resolveChoice({
+    forced: false,
+    locked: appState.musicLocked,
+    value: appState.musicTrack,
+    ids: trackIds,
+    previousId: readLastPick('track'),
+  });
+  runtime.resolvedTrackId = track.id;
+  rememberPick('track', track.id);
 }
 
 function knownTrack(id) {
@@ -549,6 +553,8 @@ async function bootRemote(slug) {
     counterMode,
     danceStyle: urlForcesDance ? urlDance : knownDance(counter.danceStyle),
     danceForced: urlForcesDance,
+    danceLocked: !urlForcesDance && counter.danceLocked === true,
+    musicLocked: counter.musicLocked === true,
     musicEnabled: !!counter.musicEnabled,
     musicTrack: knownTrack(counter.musicTrack),
     celebrated: false,
@@ -574,8 +580,10 @@ function beginLocalTimer({ name, targetTimeMs, toast }) {
     celebrated: false,
     danceStyle: selectedDanceId(),
     danceForced: false,
+    danceLocked: selectedDanceId() !== 'random',
     musicEnabled: musicInput.checked,
     musicTrack: selectedTrackId(),
+    musicLocked: selectedTrackId() !== 'random',
     slug: null,
   };
   if (FEATURE_FLAGS.allowCustomScene) {
@@ -734,9 +742,12 @@ async function boot() {
       counterMode: saved.counterMode === 'hours_seconds' ? 'hours_seconds' : 'days_hours_seconds',
       scene: saved.scene,
       celebrated: !!saved.celebrated,
-      danceStyle: knownDance(saved.danceStyle),
+      danceStyle: saved.danceLocked === true ? knownDance(saved.danceStyle) : 'random',
+      danceLocked: saved.danceLocked === true,
+      danceForced: false,
       musicEnabled: saved.musicEnabled !== false,
-      musicTrack: knownTrack(saved.musicTrack),
+      musicTrack: saved.musicLocked === true ? knownTrack(saved.musicTrack) : 'random',
+      musicLocked: saved.musicLocked === true,
       slug: null,
     };
     danceSelect.value = appState.danceStyle;
