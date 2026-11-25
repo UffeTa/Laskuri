@@ -38,6 +38,7 @@ let appState = {
 };
 
 let poseErrorShown = false;
+let sceneReady = false;
 
 const setupView = document.getElementById('setup-view');
 const timerView = document.getElementById('timer-view');
@@ -246,6 +247,7 @@ function refreshMusicControls() {
 
 function showStartOverlay() {
   runtime.performanceStarted = false;
+  sceneReady = false;
   resolveVisitChoices();
   document.documentElement.classList.add('awaiting-start');
   const title = document.getElementById('start-overlay-title');
@@ -253,14 +255,22 @@ function showStartOverlay() {
   const name = appState.eventName || 'Ajastin';
   if (title) title.textContent = name;
   if (button) {
+    button.disabled = true;
     button.setAttribute('aria-label', `Aloita: ${name}`);
-    button.focus();
   }
   refreshMusicControls();
 }
 
+function enableStartOverlay() {
+  sceneReady = true;
+  const button = document.getElementById('btn-start-counter');
+  if (!button) return;
+  button.disabled = false;
+  button.focus();
+}
+
 async function beginPerformance() {
-  if (runtime.performanceStarted) return;
+  if (!sceneReady || runtime.performanceStarted) return;
   runtime.performanceStarted = true;
   document.documentElement.classList.remove('awaiting-start');
   try {
@@ -491,8 +501,12 @@ async function startTimerView() {
     metaEnvironment,
   });
   if (metaDance && dance) metaDance.textContent = dance.name;
-  if (dance) await setCharacterPose(stageCharacter, 'dance', dance);
+  if (dance) {
+    await setCharacterPose(stageCharacter, visiblePose('walk'), dance);
+    applyPerformanceClasses(stageCharacter, dance, runtime.dances, 'dance');
+  }
   updateTimeOfDayLighting();
+  enableStartOverlay();
   updateTimerTick();
 
   if (!runtime.lightingInterval) {
