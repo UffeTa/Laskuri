@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ylläpito — Ahlsell-pihan ajastin</title>
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Fredoka:wght@500;600;700&family=Silkscreen:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body class="min-h-screen p-3 sm:p-6">
+    <main class="w-full max-w-4xl mx-auto space-y-4">
+        <header class="text-center">
+            <div class="inline-block bg-[#FFD166] comic-box rounded-2xl px-5 py-2">
+                <h1 class="font-comic text-3xl sm:text-5xl text-[#141414] leading-none">YLLÄPITO</h1>
+            </div>
+            <p class="text-slate-200 text-sm mt-2">Luo ja jaa Ahlsell-pihan laskureita. Katsojat eivät tarvitse salasanaa.</p>
+        </header>
+
+        <section id="login-panel" class="bg-[#FFF9EC] comic-box rounded-3xl p-5 sm:p-8">
+            <h2 class="font-comic text-3xl mb-4">Kirjaudu</h2>
+            <form id="login-form" class="space-y-4" novalidate>
+                <div>
+                    <label for="admin-password" class="block font-bold text-sm mb-1.5">Salasana</label>
+                    <input id="admin-password" name="password" type="password" autocomplete="current-password" required maxlength="200" class="w-full bg-white border-[3px] border-[#141414] rounded-xl px-4 py-3 text-base font-medium focus:outline-none focus:ring-4 focus:ring-[#FFD166]">
+                </div>
+                <p id="login-error" class="hidden text-sm font-bold text-[#9f1239]" role="alert"></p>
+                <button type="submit" class="comic-btn bg-[#06D6A0] text-[#141414] font-comic text-2xl px-6 py-3 rounded-2xl">Kirjaudu</button>
+            </form>
+        </section>
+
+        <section id="admin-panel" class="hidden space-y-4">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+                <p id="admin-status" class="text-sm font-bold text-[#FFD166]" role="status" aria-live="polite"></p>
+                <button id="btn-logout" type="button" class="comic-btn bg-[#EF476F] text-white text-sm font-bold px-4 py-2 rounded-xl">Kirjaudu ulos</button>
+            </div>
+
+            <section class="bg-[#FFF9EC] comic-box rounded-3xl p-5 sm:p-8 space-y-4">
+                <h2 id="form-title" class="font-comic text-3xl">Uusi laskuri</h2>
+                <form id="counter-form" class="space-y-4" novalidate>
+                    <div>
+                        <label for="field-name" class="block font-bold text-sm mb-1.5">Tapahtuman nimi</label>
+                        <input id="field-name" type="text" maxlength="60" required class="w-full bg-white border-[3px] border-[#141414] rounded-xl px-4 py-3 text-base font-medium focus:outline-none focus:ring-4 focus:ring-[#FFD166]">
+                    </div>
+                    <div>
+                        <label for="field-slug" class="block font-bold text-sm mb-1.5">Osoite</label>
+                        <input id="field-slug" type="text" maxlength="48" placeholder="luodaan nimestä, jos jätät tyhjäksi" autocapitalize="off" spellcheck="false" class="w-full bg-white border-[3px] border-[#141414] rounded-xl px-4 py-3 text-base font-medium focus:outline-none focus:ring-4 focus:ring-[#FFD166]">
+                        <p class="text-xs font-semibold text-slate-600 mt-1">Julkinen sivu on /l/osoite. Pieniä kirjaimia, numeroita ja väliviivoja.</p>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label for="field-date" class="block font-bold text-sm mb-1.5">Tavoitepäivä</label>
+                            <input id="field-date" type="date" required class="w-full bg-white border-[3px] border-[#141414] rounded-xl px-4 py-3 text-base font-medium focus:outline-none focus:ring-4 focus:ring-[#FFD166]">
+                        </div>
+                        <div>
+                            <label for="field-time" class="block font-bold text-sm mb-1.5">Tavoitekellonaika</label>
+                            <input id="field-time" type="time" required class="w-full bg-white border-[3px] border-[#141414] rounded-xl px-4 py-3 text-base font-medium focus:outline-none focus:ring-4 focus:ring-[#FFD166]">
+                        </div>
+                        <div>
+                            <label for="field-start-date" class="block font-bold text-sm mb-1.5">Aloituspäivä</label>
+                            <input id="field-start-date" type="date" class="w-full bg-white border-[3px] border-[#141414] rounded-xl px-4 py-3 text-base font-medium focus:outline-none focus:ring-4 focus:ring-[#FFD166]">
+                        </div>
+                        <div>
+                            <label for="field-start-time" class="block font-bold text-sm mb-1.5">Aloitusaika</label>
+                            <input id="field-start-time" type="time" class="w-full bg-white border-[3px] border-[#141414] rounded-xl px-4 py-3 text-base font-medium focus:outline-none focus:ring-4 focus:ring-[#FFD166]">
+                        </div>
+                    </div>
+                    <p class="text-xs font-semibold text-slate-600">Tyhjä aloitus tarkoittaa tätä hetkeä. Hahmon paikka lasketaan aloituksesta maaliin.</p>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label for="field-dance" class="block font-bold text-sm mb-1.5">Tanssityyli</label>
+                            <select id="field-dance" class="w-full bg-white border-[3px] border-[#141414] rounded-xl px-4 py-3 text-base font-medium focus:outline-none focus:ring-4 focus:ring-[#FFD166]"></select>
+                        </div>
+                        <div>
+                            <label for="field-mode" class="block font-bold text-sm mb-1.5">Laskurin näyttö</label>
+                            <select id="field-mode" class="w-full bg-white border-[3px] border-[#141414] rounded-xl px-4 py-3 text-base font-medium focus:outline-none focus:ring-4 focus:ring-[#FFD166]">
+                                <option value="days_hours_seconds">Päivät, tunnit ja sekunnit</option>
+                                <option value="hours_seconds">Tunnit ja sekunnit</option>
+                            </select>
+                        </div>
+                    </div>
+                    <label class="flex items-center gap-2 font-bold text-sm bg-white border-[3px] border-[#141414] rounded-xl px-4 py-3 cursor-pointer">
+                        <input id="field-music" type="checkbox" class="w-5 h-5">
+                        Musiikki oletuksena päällä
+                    </label>
+                    <div class="flex flex-wrap gap-2">
+                        <button id="btn-save" type="submit" class="comic-btn bg-[#06D6A0] text-[#141414] font-comic text-2xl px-6 py-3 rounded-2xl">Luo laskuri</button>
+                        <button id="btn-cancel" type="button" class="comic-btn bg-white text-[#141414] font-bold px-4 py-3 rounded-2xl">Peruuta</button>
+                    </div>
+                </form>
+            </section>
+
+            <section class="bg-[#FFF9EC] comic-box rounded-3xl p-5 sm:p-8 space-y-4">
+                <h2 class="font-comic text-3xl">Laskurit</h2>
+                <div id="counter-list" class="space-y-3"></div>
+            </section>
+        </section>
+    </main>
+    <script type="module" src="/admin/admin.js"></script>
+</body>
+</html>

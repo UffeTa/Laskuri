@@ -1,0 +1,16 @@
+{
+  "name": "laskuri",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build:css": "tailwindcss -i ./css/input.css -o ./public/css/styles.css --minify",
+    "dev": "wrangler pages dev public --ip 127.0.0.1 --port 8788 --persist-to .wrangler/state",
+    "db:migrate:local": "wrangler d1 migrations apply laskuri --local --persist-to .wrangler/state -y",
+    "db:migrate:remote": "wrangler d1 migrations apply laskuri --remote",
+    "test:unit": "node scripts/unit.mjs"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.4.17",
+    "wrangler": "^4.54.0"
+  }
+}
