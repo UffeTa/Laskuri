@@ -11,7 +11,7 @@ import luolaseikkailu from '../public/music/luolaseikkailu.js';
 import vesitaso from '../public/music/vesitaso.js';
 import pommitus from '../public/music/pommitus.js';
 import { DANCE_STYLES } from '../public/dances/registry.js';
-import { locksFromShareParams, pickDifferent, resolveChoice, shareLockParams } from '../public/js/visit-choice.js';
+import { locksFromShareParams, pickDifferent, resolveChoice, shareLockParams, visiblePose } from '../public/js/visit-choice.js';
 import { isValidSlug, slugify } from '../functions/lib/slug.js';
 
 assert.equal(slugify('Työpäivä pulkassa & viikonloppu'), 'tyopaiva-pulkassa-viikonloppu');
@@ -126,5 +126,16 @@ const fromOpenUrl = locksFromShareParams({
 });
 assert.equal(fromOpenUrl.danceLocked, false);
 assert.equal(fromOpenUrl.musicLocked, false);
+assert.equal(visiblePose('walk'), 'dance');
+assert.equal(visiblePose('cheerful'), 'dance');
+assert.equal(visiblePose('dance'), 'dance');
+assert.equal(visiblePose('celebrate'), 'celebrate');
+const seen = new Set();
+let previous = '';
+for (let i = 0; i < 8; i += 1) {
+  previous = pickDifferent(ids, previous);
+  seen.add(previous);
+}
+assert.ok(seen.size >= 2);
 
 console.log('unit ok');

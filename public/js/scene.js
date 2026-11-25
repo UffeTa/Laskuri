@@ -64,6 +64,7 @@ export function applyPerformanceClasses(element, dance, dances, mood) {
     if (item.rootClass) element.classList.remove(item.rootClass);
     if (item.walkClass) element.classList.remove(item.walkClass);
   }
+  element.dataset.danceId = dance && dance.id ? dance.id : '';
   if (!dance) return;
   if (mood === 'dance' && dance.rootClass) element.classList.add(dance.rootClass);
   else if ((mood === 'walk' || mood === 'cheerful') && dance.walkClass) {

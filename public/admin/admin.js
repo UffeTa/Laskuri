@@ -68,7 +68,7 @@ function fillDances() {
   for (const dance of DANCE_STYLES) {
     const option = document.createElement('option');
     option.value = dance.id;
-    option.textContent = `${dance.name} — ${dance.description}`;
+    option.textContent = `${dance.id} — ${dance.name}`;
     danceSelect.appendChild(option);
   }
 }
@@ -96,7 +96,7 @@ function fillTracks() {
   for (const track of MUSIC_TRACKS) {
     const option = document.createElement('option');
     option.value = track.id;
-    option.textContent = `${track.name} — ${track.description}`;
+    option.textContent = `${track.id} — ${track.name}`;
     trackSelect.appendChild(option);
   }
 }
@@ -192,7 +192,12 @@ function renderList() {
 
     const meta = document.createElement('p');
     meta.className = 'text-sm font-semibold text-slate-700';
-    meta.textContent = `Maali ${formatWhen(counter.targetTimeMs)} · aloitus ${formatWhen(counter.startTimeMs)} · ${danceName(counter)} · ${trackName(counter)} · musiikki ${counter.musicEnabled ? 'päällä' : 'pois'}`;
+    meta.textContent = `Maali ${formatWhen(counter.targetTimeMs)} · aloitus ${formatWhen(counter.startTimeMs)} · tanssi ${danceName(counter)}${counter.danceLocked ? ' (lukittu)' : ''} · raita ${trackName(counter)}${counter.musicLocked ? ' (lukittu)' : ''} · musiikki ${counter.musicEnabled ? 'päällä' : 'pois'}`;
+    const codes = document.createElement('p');
+    codes.className = 'text-xs font-semibold text-slate-600';
+    codes.textContent = counter.danceLocked
+      ? `Linkkiin voi lisätä ?d=${counter.danceStyle}`
+      : 'Tanssi arvotaan. Lukitse tyyli, jos haluat osoitteen ?d=tunnus';
 
     const link = document.createElement('a');
     link.href = `/l/${encodeURIComponent(counter.slug)}`;
@@ -241,7 +246,7 @@ function renderList() {
       }),
     );
 
-    card.append(title, meta, link, actions);
+    card.append(title, meta, codes, link, actions);
     counterList.appendChild(card);
   }
 }
@@ -338,8 +343,21 @@ counterForm.addEventListener('submit', async (event) => {
   await loadCounters();
 });
 
+function fillCodeList(elementId, items) {
+  const list = document.getElementById(elementId);
+  if (!list) return;
+  list.replaceChildren();
+  items.forEach((item) => {
+    const row = document.createElement('li');
+    row.textContent = `${item.id} — ${item.name}`;
+    list.appendChild(row);
+  });
+}
+
 fillDances();
 fillTracks();
+fillCodeList('dance-code-list', DANCE_STYLES);
+fillCodeList('track-code-list', MUSIC_TRACKS);
 resetForm();
 
 try {

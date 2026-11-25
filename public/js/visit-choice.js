@@ -1,3 +1,8 @@
+/** Signature dance stays on screen until the finish pose. The side-view walk looks the same for most styles. */
+export function visiblePose(mood) {
+  return mood === 'celebrate' ? 'celebrate' : 'dance';
+}
+
 /** Picks an id that is not the previous one when another choice exists. */
 export function pickDifferent(ids, previousId) {
   const unique = [];

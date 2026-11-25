@@ -1,6 +1,6 @@
 import { ensureDanceStylesheet, loadAllDances } from '../dances/index.js';
 import { MUSIC_TRACKS } from '../music/index.js';
-import { resolveChoice } from './visit-choice.js';
+import { resolveChoice, visiblePose } from './visit-choice.js';
 import { updateTimeOfDayLighting } from './lighting.js';
 import { RetroSynthMusicEngine, setMusicNotifier } from './music.js';
 import { isMuted, playFanfare, playNext, setMusicMuted, startTrack, unlockAudio, currentTrack } from './playlist.js';
@@ -151,7 +151,7 @@ function fillDanceSelect() {
   for (const dance of runtime.dances) {
     const option = document.createElement('option');
     option.value = dance.id;
-    option.textContent = `${dance.name} — ${dance.description}`;
+    option.textContent = `${dance.id} — ${dance.name}`;
     danceSelect.appendChild(option);
   }
 }
@@ -212,7 +212,7 @@ function fillTrackSelect(select) {
   for (const track of MUSIC_TRACKS) {
     const option = document.createElement('option');
     option.value = track.id;
-    option.textContent = `${track.name} — ${track.description}`;
+    option.textContent = `${track.id} — ${track.name}`;
     select.appendChild(option);
   }
 }
@@ -445,12 +445,9 @@ function updateTimerTick() {
   if (metaDance && dance) metaDance.textContent = dance.name;
   stageCharacter.classList.toggle('mood-cheerful', runtime.currentMood === 'cheerful' && !(dance && dance.walkClass));
   stageCharacter.classList.toggle('mood-dance', runtime.currentMood === 'dance');
-  if (dance) applyPerformanceClasses(stageCharacter, dance, runtime.dances, runtime.currentMood);
-  musicNotes.classList.toggle('hidden', runtime.currentMood !== 'dance' && runtime.currentMood !== 'celebrate');
-
-  const pose = runtime.currentMood === 'celebrate'
-    ? 'celebrate'
-    : (runtime.currentMood === 'dance' ? 'dance' : 'walk');
+  const pose = visiblePose(runtime.currentMood);
+  if (dance) applyPerformanceClasses(stageCharacter, dance, runtime.dances, pose === 'dance' ? 'dance' : 'celebrate');
+  musicNotes.classList.toggle('hidden', pose !== 'dance' && runtime.currentMood !== 'celebrate');
   setCharacterPose(stageCharacter, pose, dance).catch(() => {
     if (!poseErrorShown) {
       poseErrorShown = true;
@@ -482,8 +479,9 @@ async function startTimerView() {
   const targetDate = new Date(appState.targetTimeMs);
   displayTargetDatetime.textContent = `Tavoiteaika: ${targetDate.toLocaleDateString('fi-FI')} klo ${pad2(targetDate.getHours())}:${pad2(targetDate.getMinutes())}`;
 
+  showStartOverlay();
   const dance = activeDance();
-  if (dance) applyPerformanceClasses(stageCharacter, dance, runtime.dances, 'walk');
+  if (dance) applyPerformanceClasses(stageCharacter, dance, runtime.dances, 'dance');
   await renderScene({
     stageEnvironment,
     stageGoal,
@@ -493,8 +491,8 @@ async function startTimerView() {
     metaEnvironment,
   });
   if (metaDance && dance) metaDance.textContent = dance.name;
+  if (dance) await setCharacterPose(stageCharacter, 'dance', dance);
   updateTimeOfDayLighting();
-  showStartOverlay();
   updateTimerTick();
 
   if (!runtime.lightingInterval) {

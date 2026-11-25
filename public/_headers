@@ -1,0 +1,16 @@
+# HTML and scripts must not stick in a browser or CDN cache, or a reload
+# keeps an old dance picker.
+/
+  Cache-Control: public, max-age=0, must-revalidate
+/index.html
+  Cache-Control: public, max-age=0, must-revalidate
+/js/*
+  Cache-Control: public, max-age=0, must-revalidate
+/dances/*
+  Cache-Control: public, max-age=0, must-revalidate
+/music/*
+  Cache-Control: public, max-age=0, must-revalidate
+/css/*
+  Cache-Control: public, max-age=0, must-revalidate
+/admin/*
+  Cache-Control: public, max-age=0, must-revalidate
