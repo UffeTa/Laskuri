@@ -1,0 +1,42 @@
+<svg viewBox="0 0 190 112" class="w-full h-full pixel-art overflow-visible drop-shadow-[3px_3px_0px_rgba(0,0,0,0.55)]">
+    <polygon id="car-headlight-beam" points="18,58 -58,42 -58,96 22,74" fill="rgba(255, 245, 180, 0.38)" opacity="0" class="transition-opacity duration-700"/>
+    <ellipse cx="98" cy="104" rx="78" ry="6" fill="rgba(0,0,0,0.42)"/>
+    <!-- Kori: pysty SUV, kaksivärinen katto -->
+    <path d="M22 70 L28 52 L46 46 L70 28 L150 26 L168 40 L176 56 L174 86 L20 86 Z" fill="#1c3a34" stroke="#0d0e11" stroke-width="3"/>
+    <path d="M48 48 L72 30 L148 28 L162 42 L150 46 L74 46 Z" fill="#101418" stroke="#0d0e11" stroke-width="2"/>
+    <path d="M30 54 L48 48 L72 32 L78 48 Z" fill="#16302b"/>
+    <!-- Suljettu Tech-Deck -keula -->
+    <path d="M22 62 L30 50 L52 46 L54 70 L22 72 Z" fill="#14181c" stroke="#0d0e11" stroke-width="2.5"/>
+    <path d="M24 66 L40 56 L50 56 L50 64 Z" fill="#0c0e12"/>
+    <!-- Kapea LED-valonauha ja alemmat valot -->
+    <g id="car-headlights">
+        <rect x="20" y="52" width="36" height="3.2" fill="#e7fbff"/>
+        <rect x="22" y="51" width="8" height="5" fill="#f4feff"/>
+        <rect x="24" y="60" width="9" height="4" fill="#d7f6ff"/>
+        <rect x="36" y="60" width="9" height="4" fill="#d7f6ff"/>
+    </g>
+    <!-- Ikkunat -->
+    <path d="M78 34 L98 34 L96 48 L76 48 Z" fill="#9fd7e8" stroke="#111317" stroke-width="2"/>
+    <path d="M104 34 L142 33 L150 46 L104 48 Z" fill="#6f9aab" stroke="#111317" stroke-width="2"/>
+    <rect x="118" y="40" width="6" height="8" fill="#1c3a34"/>
+    <rect x="168" y="48" width="7" height="4" fill="#e23b4a" stroke="#141414" stroke-width="1.2"/>
+    <!-- Tekstimuotoinen SKODA-sanamerkki, ei virallista logoa -->
+    <rect x="78" y="56" width="68" height="16" fill="#07110f" stroke="#e8eaee" stroke-width="1.2"/>
+    <text x="82" y="68" font-family="Arial, Helvetica, sans-serif" font-size="11" font-weight="700" letter-spacing="1.4" fill="#f4f6f8">SKODA</text>
+    <!-- BOS-5-kilpi -->
+    <rect x="24" y="74" width="26" height="8" fill="#ffffff" stroke="#141414" stroke-width="1.5"/>
+    <rect x="24" y="74" width="4" height="8" fill="#0047ab"/>
+    <text x="29" y="80.4" font-family="monospace" font-size="5.5" font-weight="bold" fill="#141414">BOS-5</text>
+    <g transform="translate(62, 88)">
+        <circle cx="0" cy="0" r="15" fill="#121316" stroke="#000" stroke-width="2.5"/>
+        <circle cx="0" cy="0" r="9" fill="#2b2f38"/>
+        <path d="M-7 -2 L7 2 M-2 -7 L2 7 M-6 5 L6 -5" stroke="#d8dee9" stroke-width="1.6"/>
+        <circle cx="0" cy="0" r="2.4" fill="#9fd7c8"/>
+    </g>
+    <g transform="translate(146, 88)">
+        <circle cx="0" cy="0" r="15" fill="#121316" stroke="#000" stroke-width="2.5"/>
+        <circle cx="0" cy="0" r="9" fill="#2b2f38"/>
+        <path d="M-7 -2 L7 2 M-2 -7 L2 7 M-6 5 L6 -5" stroke="#d8dee9" stroke-width="1.6"/>
+        <circle cx="0" cy="0" r="2.4" fill="#9fd7c8"/>
+    </g>
+</svg>

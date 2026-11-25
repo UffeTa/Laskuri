@@ -1,0 +1,402 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+    --ink: #141414;
+    --paper: #FFF9EC;
+    --accent-yellow: #FFD166;
+    --accent-blue: #118AB2;
+    --accent-red: #EF476F;
+    --accent-green: #06D6A0;
+}
+
+body {
+    font-family: 'Fredoka', sans-serif;
+    background-color: #1B263B;
+    background-image: radial-gradient(rgba(255, 255, 255, 0.08) 1.5px, transparent 1.5px);
+    background-size: 18px 18px;
+    color: var(--ink);
+    overflow-x: hidden;
+}
+
+.font-comic {
+    font-family: 'Bangers', cursive;
+    letter-spacing: 0.06em;
+}
+
+.font-pixel {
+    font-family: 'Silkscreen', monospace;
+}
+
+@font-face {
+    font-family: 'TimerDigits';
+    src: url('/assets/fonts/IntelOneMono-Bold.woff2') format('woff2');
+    font-weight: 700;
+    font-style: normal;
+    font-display: swap;
+}
+
+.font-timer {
+    font-family: 'TimerDigits', ui-monospace, 'Courier New', monospace;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.01em;
+}
+
+.comic-box {
+    border: 3px solid var(--ink);
+    box-shadow: 5px 5px 0px var(--ink);
+}
+
+.comic-btn {
+    border: 3px solid var(--ink);
+    box-shadow: 4px 4px 0px var(--ink);
+    transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+
+.comic-btn:hover {
+    transform: translate(-1px, -1px);
+    box-shadow: 5px 5px 0px var(--ink);
+}
+
+.comic-btn:active {
+    transform: translate(3px, 3px);
+    box-shadow: 1px 1px 0px var(--ink);
+}
+
+/* Pikselitaiteen terävyys */
+.pixel-art {
+    shape-rendering: crispEdges;
+}
+
+/* Kävelyanimaatio hahmolle */
+@keyframes walkBounce {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-4px); }
+}
+
+@keyframes legSwingFront {
+    0%, 100% { transform: rotate(-18deg); }
+    50% { transform: rotate(20deg); }
+}
+
+@keyframes legSwingBack {
+    0%, 100% { transform: rotate(20deg); }
+    50% { transform: rotate(-18deg); }
+}
+
+@keyframes armSwingFront {
+    0%, 100% { transform: rotate(18deg); }
+    50% { transform: rotate(-18deg); }
+}
+
+@keyframes armSwingBack {
+    0%, 100% { transform: rotate(-18deg); }
+    50% { transform: rotate(18deg); }
+}
+
+@keyframes waveHand {
+    0%, 100% { transform: rotate(0deg); }
+    25% { transform: rotate(-16deg); }
+    75% { transform: rotate(12deg); }
+}
+
+@keyframes cloudDrift {
+    0% { transform: translateX(-15%); }
+    100% { transform: translateX(115%); }
+}
+
+@keyframes twinkle {
+    0%, 100% { opacity: 0.25; }
+    50% { opacity: 1; }
+}
+
+@keyframes confettiFall {
+    0% { transform: translateY(-10px) rotate(0deg); opacity: 1; }
+    100% { transform: translateY(340px) rotate(540deg); opacity: 0; }
+}
+
+@keyframes carFlash {
+    0%, 100% { opacity: 0.35; }
+    25%, 75% { opacity: 1; }
+    50% { opacity: 0.2; }
+}
+
+.anim-walk-body {
+    animation: walkBounce 0.45s ease-in-out infinite;
+}
+
+.anim-leg-front {
+    transform-origin: 48px 94px;
+    animation: legSwingFront 0.45s ease-in-out infinite;
+}
+
+.anim-leg-back {
+    transform-origin: 48px 94px;
+    animation: legSwingBack 0.45s ease-in-out infinite;
+}
+
+.anim-arm-front {
+    transform-origin: 48px 58px;
+    animation: armSwingFront 0.45s ease-in-out infinite;
+}
+
+.anim-arm-back {
+    transform-origin: 48px 58px;
+    animation: armSwingBack 0.45s ease-in-out infinite;
+}
+
+.anim-wave {
+    transform-origin: 68px 56px;
+    animation: waveHand 0.65s ease-in-out infinite;
+}
+
+.cloud-slow {
+    animation: cloudDrift 38s linear infinite;
+}
+
+.cloud-fast {
+    animation: cloudDrift 26s linear infinite;
+    animation-delay: -11s;
+}
+
+.star-twinkle {
+    animation: twinkle 2.4s ease-in-out infinite;
+}
+
+.confetti-piece {
+    position: absolute;
+    top: 0;
+    width: 9px;
+    height: 9px;
+    border: 1.5px solid #141414;
+    animation: confettiFall 2.2s linear forwards;
+}
+
+.car-lights-flash {
+    animation: carFlash 0.6s ease-in-out 3;
+}
+
+/* Iloisempi kävely (matkan edetessä lähemmäs päämäärää) */
+@keyframes cheerfulBounce {
+    0%, 100% { transform: translateY(0px) rotate(-2deg); }
+    50% { transform: translateY(-8px) rotate(3deg); }
+}
+
+.mood-cheerful .anim-walk-body {
+    animation: cheerfulBounce 0.34s ease-in-out infinite;
+}
+.mood-cheerful .anim-leg-front {
+    animation: legSwingFront 0.34s ease-in-out infinite;
+}
+.mood-cheerful .anim-leg-back {
+    animation: legSwingBack 0.34s ease-in-out infinite;
+}
+.mood-cheerful .anim-arm-front {
+    animation: armSwingFront 0.34s ease-in-out infinite;
+}
+.mood-cheerful .anim-arm-back {
+    animation: armSwingBack 0.34s ease-in-out infinite;
+}
+
+@keyframes noteFloat {
+    0% { transform: translateY(6px) scale(0.8) rotate(-10deg); opacity: 0; }
+    25% { opacity: 1; }
+    100% { transform: translateY(-26px) scale(1.15) rotate(12deg); opacity: 0; }
+}
+
+.music-note {
+    animation: noteFloat 1.4s ease-out infinite;
+}
+
+/* Liukusäätimen sarjakuvatyyli */
+input[type="range"] {
+    accent-color: #FFD166;
+}
+
+/* =============================================================
+   PUHDAS KOKO NÄYTÖN NÄKYMÄ (Jaettava esitystila)
+   Näyttää vain taustan, hahmon, kohteen ja laskurin
+============================================================= */
+html.wants-fullscreen body {
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: hidden;
+    background: #141414;
+}
+
+html.wants-fullscreen body main {
+    max-width: none !important;
+    width: 100vw;
+    height: 100vh;
+}
+
+html.wants-fullscreen body #main-header,
+html.wants-fullscreen body #setup-view,
+html.wants-fullscreen body #timer-header-bar,
+html.wants-fullscreen body .hide-in-fullscreen {
+    display: none !important;
+}
+
+html.wants-fullscreen body #timer-view {
+    display: block !important;
+    width: 100vw;
+    height: 100vh;
+    margin: 0 !important;
+}
+
+html.wants-fullscreen body #stage-card {
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    width: 100vw;
+    height: 100vh;
+}
+
+html.wants-fullscreen body #stage-container {
+    width: 100vw !important;
+    height: 100vh !important;
+}
+
+/* Leijuva, pelkistetty laskuri yläreunassa koko näytön tilassa */
+html.wants-fullscreen body #counter-toggle {
+    position: fixed;
+    top: 1.25rem;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 40;
+    width: auto;
+    min-width: min(92vw, 420px);
+    max-width: 94vw;
+    padding: 0.75rem 1.75rem;
+    background-color: rgba(255, 209, 102, 0.94);
+    backdrop-filter: blur(4px);
+}
+
+html.wants-fullscreen body #counter-digits {
+    padding: 0.15rem 0;
+    font-size: clamp(2rem, 6vw, 4.25rem);
+    line-height: 1.05;
+}
+
+/* Hahmo ja auto skaalautuvat upeasti isolle näytölle */
+html.wants-fullscreen body #stage-character {
+    width: clamp(5rem, 11vh, 8.5rem);
+    height: clamp(7rem, 15vh, 11.5rem);
+}
+
+html.wants-fullscreen body #stage-goal {
+    width: clamp(11rem, 24vh, 19rem);
+    height: clamp(6.5rem, 14vh, 11rem);
+}
+
+html.wants-fullscreen body #fullscreen-controls {
+    display: flex !important;
+}
+
+
+/* Jaettu laskuri (/l/osoite): lomake piiloon jo ennen skriptien valmistumista */
+html.remote-counter #setup-view {
+    display: none !important;
+}
+
+html.remote-counter #boot-status {
+    display: block !important;
+}
+
+html.remote-counter.is-ready #boot-status {
+    display: none !important;
+}
+
+html.wants-fullscreen #boot-status {
+    position: fixed;
+    top: 1.25rem;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 50;
+}
+
+#start-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 70;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+    background: rgba(9, 13, 26, 0.72);
+}
+
+html.awaiting-start #start-overlay {
+    display: flex;
+}
+
+#btn-start-counter {
+    width: min(92vw, 640px);
+    background: #FFD166;
+    color: #141414;
+    border-radius: 1.5rem;
+    padding: 1.5rem 1.75rem 1.25rem;
+    cursor: pointer;
+    text-align: center;
+}
+
+#btn-start-counter:disabled {
+    cursor: progress;
+    opacity: 0.72;
+}
+
+#btn-start-counter #start-overlay-kicker {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 0.35rem;
+}
+
+#btn-start-counter #start-overlay-title {
+    display: block;
+    font-family: 'Bangers', cursive;
+    font-size: clamp(2.4rem, 8vw, 4.6rem);
+    line-height: 0.95;
+    letter-spacing: 0.04em;
+    overflow-wrap: anywhere;
+}
+
+html.awaiting-start .anim-walk-body,
+html.awaiting-start .anim-leg-front,
+html.awaiting-start .anim-leg-back,
+html.awaiting-start .anim-arm-front,
+html.awaiting-start .anim-arm-back,
+html.awaiting-start .anim-wave,
+html.awaiting-start .anim-dance-body,
+html.awaiting-start .anim-dance-arm-l,
+html.awaiting-start .anim-dance-arm-r,
+html.awaiting-start .anim-dance-leg-l,
+html.awaiting-start .anim-dance-leg-r,
+html.awaiting-start .cloud-slow,
+html.awaiting-start .cloud-fast,
+html.awaiting-start .star-twinkle,
+html.awaiting-start .music-note,
+html.awaiting-start .confetti-piece,
+html.awaiting-start #character-wrapper {
+    animation-play-state: paused !important;
+    transition: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+
+    .confetti-piece {
+        display: none !important;
+    }
+}

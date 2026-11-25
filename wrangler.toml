@@ -1,0 +1,12 @@
+# Cloudflare Pages + D1. Salaisuudet EIVÄT kuulu tähän tiedostoon.
+# Aseta ne komennolla: npx wrangler pages secret put ADMIN_PASSWORD
+# ja: npx wrangler pages secret put SESSION_SECRET
+# Paikallisesti arvot luetaan tiedostosta .dev.vars (ei versiohallintaan).
+name = "laskuri"
+compatibility_date = "2026-11-01"
+pages_build_output_dir = "public"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "laskuri"
+database_id = "7bd16b1f-8382-4763-a81a-661f7a5d1954"

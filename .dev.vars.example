@@ -1,0 +1,4 @@
+# Kopioi tämä tiedostoksi .dev.vars paikallista wrangler pages dev -ajoa varten.
+# Älä commitoi .dev.vars-tiedostoa. Tuotannossa samat nimet asetetaan Pages-salaisuuksina.
+ADMIN_PASSWORD=vaihda-tama-pitka-salasana
+SESSION_SECRET=vaihda-tama-satunnainen-salaisuus-vahintaan-32-merkkia
