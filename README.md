@@ -113,7 +113,7 @@ npx wrangler pages secret put ADMIN_PASSWORD --project-name laskuri --env previe
 npx wrangler pages secret put SESSION_SECRET --project-name laskuri --env preview
 ```
 
-`SESSION_SECRET`in vaihtaminen mitätöi kyseisen ympäristön vanhat kirjautumiset.
+Arvon `SESSION_SECRET` vaihtaminen mitätöi kyseisen ympäristön vanhat kirjautumiset.
 
 GitHubia ei ole vielä kytketty Pages-projektiin, joten push ei julkaise itseään. Automaattinen julkaisu kytketään Cloudflare-hallinnassa (Workers & Pages → `laskuri` → yhdistä Git). Asetukset silloin:
 
