@@ -20,7 +20,7 @@ functions/              Cloudflare Pages Functions
   api/counters/[slug]   julkinen luku
   l/[slug].js           osoite /l/<slug>
 migrations/0001_init.sql
-wrangler.toml           D1-binding DB, ei salaisuuksia
+wrangler.toml           projekti laskuri, output public, D1-binding DB
 css/input.css           Tailwind-lähde ja sarjakuvatyyli
 ```
 
@@ -86,21 +86,26 @@ Aja `npm run build:css` uudelleen, jos lisäät Tailwind-luokkia `public/`-tiedo
 
 ## Cloudflare Pages
 
-Tee nämä kerran. Salasanaa ja istuntosalaisuutta ei kirjoiteta repoon eikä `wrangler.toml`-tiedostoon.
+D1-kanta `laskuri` on jo olemassa ja migraatio `0001_init.sql` on ajettu tuotantoon. `wrangler.toml` osoittaa siihen:
+
+- `name = "laskuri"` (sama nimi `wrangler pages deploy` -komennolle)
+- `pages_build_output_dir = "public"`
+- binding `DB`, `database_name = "laskuri"`, `database_id = "7bd16b1f-8382-4763-a81a-661f7a5d1954"`
+
+Salasanaa ja istuntosalaisuutta ei kirjoiteta repoon eikä `wrangler.toml`-tiedostoon. Uutta kantaa ei luoda uudelleen, eikä `0001_init.sql`:ää ajeta uudelleen.
+
+Jäljellä oleva käyttöönotto:
 
 1. Kirjaudu: `npx wrangler login`
-2. Luo tietokanta: `npx wrangler d1 create laskuri`
-3. Kopioi komennon tulostama `database_id` tiedostoon `wrangler.toml` ja korvaa siellä oleva nollatunnus. Bindingin nimen pitää pysyä `DB`.
-4. Aja skeema tuotantoon: `npm run db:migrate:remote`
-5. Yhdistä repo Cloudflare Pagesiin (Workers & Pages → Create → Pages → Connect to Git):
+2. Yhdistä repo Cloudflare Pagesiin (Workers & Pages → Create → Pages → Connect to Git):
    - Production branch: `main`
    - Build command: `npm run build:css`
    - Build output directory: `public`
    - Älä aseta `NODE_ENV=production` asennuksen ajaksi: `tailwindcss` on devDependency, ja Pagesin oletusasennus asentaa sen.
    - Root directory: repon juuri
    - `functions/` jätetään juureen. Pages ottaa sen käyttöön automaattisesti, sitä ei kopioida `public/`-kansioon.
-6. Varmista projektin Settings → Bindings -kohdassa D1-binding: muuttujan nimi `DB`, tietokanta `laskuri`. Sama binding on `wrangler.toml`-tiedostossa; `database_id`:n on täsmättävä luotuun kantaan.
-7. Aseta salaisuudet sen jälkeen, kun Pages-projekti on olemassa. Jos projektin nimi ei ole `laskuri`, vaihda `--project-name`.
+3. Varmista projektin Settings → Bindings -kohdassa D1-binding: muuttujan nimi `DB`, tietokanta `laskuri`. Tunnus on sama kuin `wrangler.toml`-tiedostossa.
+4. Aseta salaisuudet sen jälkeen, kun Pages-projekti on olemassa. Projektin nimen pitää olla `laskuri`, jotta `wrangler pages deploy` toimii ilman eri nimeä.
 
 ```bash
 npx wrangler pages secret put ADMIN_PASSWORD --project-name laskuri
@@ -109,7 +114,7 @@ npx wrangler pages secret put SESSION_SECRET --project-name laskuri
 
 `SESSION_SECRET` on pitkä satunnainen merkkijono. Sen vaihtaminen mitätöi vanhat kirjautumiset. `ADMIN_PASSWORD` on ylläpitosalasana.
 
-8. Julkaise yhdistämällä `main`-haaraan tai komenolla `npx wrangler pages deploy public --project-name laskuri`.
-9. Avaa `https://<projekti>.pages.dev/admin`, kirjaudu ja luo ensimmäinen laskuri. Julkinen sivu on `https://<projekti>.pages.dev/l/<slug>`.
+5. Julkaise yhdistämällä `main`-haaraan tai komenolla `npx wrangler pages deploy public --project-name laskuri`.
+6. Avaa `https://laskuri.pages.dev/admin`, kirjaudu ja luo ensimmäinen laskuri. Julkinen sivu on `https://laskuri.pages.dev/l/<slug>`.
 
-Migraatio `migrations/0001_init.sql` luo taulut `counters` ja `login_attempts`.
+Taulut `counters` ja `login_attempts` ovat jo tuotantokannassa. Uusi migraatiotiedosto ajetaan myöhemmin komennolla `npm run db:migrate:remote`. Paikallinen kanta alustetaan yhä komennolla `npm run db:migrate:local`.
