@@ -5,6 +5,11 @@ import { compileTrack } from '../public/music/sequence.js';
 import pihapolku from '../public/music/pihapolku.js';
 import yovuoro from '../public/music/yovuoro.js';
 import maaliviiva from '../public/music/maaliviiva.js';
+import aamunkoitto from '../public/music/aamunkoitto.js';
+import kolikkopeli from '../public/music/kolikkopeli.js';
+import luolaseikkailu from '../public/music/luolaseikkailu.js';
+import vesitaso from '../public/music/vesitaso.js';
+import pommitus from '../public/music/pommitus.js';
 import { DANCE_STYLES } from '../public/dances/registry.js';
 import { isValidSlug, slugify } from '../functions/lib/slug.js';
 
@@ -18,15 +23,17 @@ assert.equal(isValidSlug('../etc'), false);
 
 assert.equal(isAllowedDance('groove'), true);
 assert.equal(isAllowedDance('robot'), true);
+assert.equal(isAllowedDance('random'), true);
 assert.equal(isAllowedDance('nope'), false);
 assert.equal(isAllowedDance('disco'), true);
+assert.equal(isAllowedDance('floss'), true);
 assert.equal(isAllowedDance('moonwalk'), true);
-assert.ok(DANCE_STYLES.length >= 8);
+assert.ok(DANCE_STYLES.length >= 18);
 assert.equal(isAllowedTrack('random'), true);
 assert.equal(isAllowedTrack('pihapolku'), true);
 assert.equal(isAllowedTrack('ei-raitaa'), false);
 
-for (const definition of [pihapolku, yovuoro, maaliviiva]) {
+for (const definition of [pihapolku, yovuoro, maaliviiva, aamunkoitto, kolikkopeli, luolaseikkailu, vesitaso, pommitus]) {
   const compiled = compileTrack(definition);
   assert.ok(compiled.seconds >= 170 && compiled.seconds <= 210, `${definition.id} ${compiled.seconds}`);
   assert.equal(compiled.bars % 1, 0);

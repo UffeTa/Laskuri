@@ -50,9 +50,9 @@ export async function renderScene(nodes) {
   mountTrustedMarkup(nodes.stageCharacter, walk);
   nodes.stageCharacter.dataset.pose = 'walk';
   nodes.stageCharacter.dataset.poseKey = 'walk:';
-  nodes.metaCharacter.textContent = SCENE.character.name;
-  nodes.metaGoal.textContent = SCENE.goal.name;
-  nodes.metaEnvironment.textContent = SCENE.environment.name;
+  if (nodes.metaCharacter) nodes.metaCharacter.textContent = SCENE.character.name;
+  if (nodes.metaGoal) nodes.metaGoal.textContent = SCENE.goal.name;
+  if (nodes.metaEnvironment) nodes.metaEnvironment.textContent = SCENE.environment.name;
 }
 
 export function applyDanceClass(element, dance, dances) {

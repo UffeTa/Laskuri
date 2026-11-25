@@ -7,7 +7,7 @@ const MIN_MS = Date.UTC(2000, 0, 1);
 const MAX_MS = Date.UTC(2100, 0, 1);
 
 export function isAllowedDance(id) {
-  return DANCE_STYLES.some((dance) => dance.id === id);
+  return id === 'random' || DANCE_STYLES.some((dance) => dance.id === id);
 }
 
 export function isAllowedTrack(id) {
@@ -23,7 +23,7 @@ export function rowToCounter(row) {
     startTimeMs: Number(row.start_time_ms),
     musicEnabled: Number(row.music_enabled) === 1,
     musicTrack: row.music_track || RANDOM_TRACK_ID,
-    danceStyle: row.dance_style,
+    danceStyle: row.dance_style || 'random',
     counterMode: row.counter_mode,
     createdAt: Number(row.created_at),
     updatedAt: Number(row.updated_at),
@@ -73,8 +73,13 @@ export function parseCounterInput(data) {
     value.musicTrack = data.musicTrack;
   }
 
-  if (!isAllowedDance(data.danceStyle)) errors.push('Tuntematon tanssityyli.');
-  else value.danceStyle = data.danceStyle;
+  if (data.danceStyle === undefined || data.danceStyle === null || data.danceStyle === '') {
+    value.danceStyle = 'random';
+  } else if (!isAllowedDance(data.danceStyle)) {
+    errors.push('Tuntematon tanssityyli.');
+  } else {
+    value.danceStyle = data.danceStyle;
+  }
 
   const mode = data.counterMode || 'days_hours_seconds';
   if (!MODES.has(mode)) errors.push('Laskurin näyttötila on virheellinen.');

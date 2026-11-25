@@ -61,6 +61,10 @@ async function api(path, options = {}) {
 
 function fillDances() {
   danceSelect.replaceChildren();
+  const randomOption = document.createElement('option');
+  randomOption.value = 'random';
+  randomOption.textContent = 'Satunnainen';
+  danceSelect.appendChild(randomOption);
   for (const dance of DANCE_STYLES) {
     const option = document.createElement('option');
     option.value = dance.id;
@@ -70,8 +74,9 @@ function fillDances() {
 }
 
 function danceName(id) {
+  if (!id || id === 'random') return 'Satunnainen';
   const dance = DANCE_STYLES.find((item) => item.id === id);
-  return dance ? dance.name : id;
+  return dance ? dance.name : 'Satunnainen';
 }
 
 function trackName(id) {
@@ -128,7 +133,7 @@ function resetForm() {
   counterForm.reset();
   formTitle.textContent = 'Uusi laskuri';
   submitButton.textContent = 'Luo laskuri';
-  danceSelect.value = 'groove';
+  danceSelect.value = 'random';
   trackSelect.value = RANDOM_TRACK_ID;
   document.getElementById('field-music').checked = true;
   document.getElementById('field-mode').value = 'days_hours_seconds';
@@ -146,7 +151,7 @@ function fillForm(counter) {
   document.getElementById('field-start-time').value = timeValue(counter.startTimeMs);
   document.getElementById('field-music').checked = !!counter.musicEnabled;
   trackSelect.value = MUSIC_TRACKS.some((track) => track.id === counter.musicTrack) ? counter.musicTrack : RANDOM_TRACK_ID;
-  danceSelect.value = DANCE_STYLES.some((dance) => dance.id === counter.danceStyle) ? counter.danceStyle : 'groove';
+  danceSelect.value = DANCE_STYLES.some((dance) => dance.id === counter.danceStyle) ? counter.danceStyle : 'random';
   document.getElementById('field-mode').value = counter.counterMode === 'hours_seconds'
     ? 'hours_seconds'
     : 'days_hours_seconds';

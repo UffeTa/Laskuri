@@ -1,5 +1,5 @@
 import { ensureDanceStylesheet, loadAllDances } from '../dances/index.js';
-import { MUSIC_TRACKS, resolveTrackId } from '../music/index.js';
+import { MUSIC_TRACKS } from '../music/index.js';
 import { updateTimeOfDayLighting } from './lighting.js';
 import { RetroSynthMusicEngine, setMusicNotifier } from './music.js';
 import { isMuted, playFanfare, playNext, setMusicMuted, startTrack, unlockAudio, currentTrack } from './playlist.js';
@@ -29,7 +29,8 @@ let appState = {
   counterMode: 'days_hours_seconds',
   scene: null,
   celebrated: false,
-  danceStyle: 'groove',
+  danceStyle: 'random',
+  danceForced: false,
   musicEnabled: true,
   musicTrack: 'random',
   slug: null,
@@ -101,12 +102,14 @@ function setFormDateTime(dateObj) {
 }
 
 function activeDance() {
-  return runtime.dances.find((dance) => dance.id === appState.danceStyle) || runtime.dances[0];
+  const id = runtime.resolvedDanceId || appState.danceStyle;
+  return runtime.dances.find((dance) => dance.id === id) || runtime.dances[0];
 }
 
 function selectedDanceId() {
   const value = danceSelect.value;
-  return runtime.dances.some((dance) => dance.id === value) ? value : 'groove';
+  if (!value || value === 'random') return 'random';
+  return runtime.dances.some((dance) => dance.id === value) ? value : 'random';
 }
 
 function saveState() {
@@ -119,7 +122,7 @@ function saveState() {
       counterMode: appState.counterMode,
       scene: appState.scene,
       celebrated: !!appState.celebrated,
-      danceStyle: appState.danceStyle || 'groove',
+      danceStyle: appState.danceStyle || 'random',
       musicEnabled: !!appState.musicEnabled,
       musicTrack: appState.musicTrack || 'random',
     }));
@@ -138,6 +141,10 @@ function loadState() {
 
 function fillDanceSelect() {
   danceSelect.replaceChildren();
+  const randomOption = document.createElement('option');
+  randomOption.value = 'random';
+  randomOption.textContent = 'Satunnainen';
+  danceSelect.appendChild(randomOption);
   for (const dance of runtime.dances) {
     const option = document.createElement('option');
     option.value = dance.id;
@@ -147,7 +154,43 @@ function fillDanceSelect() {
 }
 
 function knownDance(id) {
-  return runtime.dances.some((dance) => dance.id === id) ? id : 'groove';
+  if (!id || id === 'random') return 'random';
+  return runtime.dances.some((dance) => dance.id === id) ? id : 'random';
+}
+
+function lastPickKey(kind) {
+  return `ahlsell_last_${kind}_${appState.slug || 'paikallinen'}`;
+}
+
+function pickFresh(ids, kind) {
+  const key = lastPickKey(kind);
+  let last = '';
+  try { last = localStorage.getItem(key) || ''; } catch (e) {}
+  const pool = ids.filter((id) => id !== last);
+  const source = pool.length ? pool : ids;
+  const choice = source[Math.floor(Math.random() * source.length)];
+  try { localStorage.setItem(key, choice); } catch (e) {}
+  return choice;
+}
+
+function resolveVisitChoices() {
+  const danceIds = runtime.dances.map((dance) => dance.id);
+  if (appState.danceForced && danceIds.includes(appState.danceStyle)) {
+    runtime.resolvedDanceId = appState.danceStyle;
+  } else if (danceIds.includes(appState.danceStyle)) {
+    runtime.resolvedDanceId = appState.danceStyle;
+  } else {
+    runtime.resolvedDanceId = pickFresh(danceIds, 'dance');
+  }
+  try { localStorage.setItem(lastPickKey('dance'), runtime.resolvedDanceId); } catch (e) {}
+
+  const trackIds = MUSIC_TRACKS.map((track) => track.id);
+  if (trackIds.includes(appState.musicTrack)) {
+    runtime.resolvedTrackId = appState.musicTrack;
+  } else {
+    runtime.resolvedTrackId = pickFresh(trackIds, 'track');
+  }
+  try { localStorage.setItem(lastPickKey('track'), runtime.resolvedTrackId); } catch (e) {}
 }
 
 function knownTrack(id) {
@@ -199,7 +242,7 @@ function refreshMusicControls() {
 
 function showStartOverlay() {
   runtime.performanceStarted = false;
-  runtime.resolvedTrackId = resolveTrackId(appState.musicTrack);
+  resolveVisitChoices();
   document.documentElement.classList.add('awaiting-start');
   const title = document.getElementById('start-overlay-title');
   const button = document.getElementById('btn-start-counter');
@@ -497,12 +540,15 @@ async function bootRemote(slug) {
   let counterMode = counter.counterMode || 'days_hours_seconds';
   if (params.get('m') === 'h') counterMode = 'hours_seconds';
   if (params.get('m') === 'd') counterMode = 'days_hours_seconds';
+  const urlDance = params.get('d');
+  const urlForcesDance = Boolean(urlDance && runtime.dances.some((dance) => dance.id === urlDance));
   appState = {
     eventName: counter.name,
     startTimeMs: Number(counter.startTimeMs),
     targetTimeMs: Number(counter.targetTimeMs),
     counterMode,
-    danceStyle: knownDance(counter.danceStyle),
+    danceStyle: urlForcesDance ? urlDance : knownDance(counter.danceStyle),
+    danceForced: urlForcesDance,
     musicEnabled: !!counter.musicEnabled,
     musicTrack: knownTrack(counter.musicTrack),
     celebrated: false,
@@ -527,6 +573,7 @@ function beginLocalTimer({ name, targetTimeMs, toast }) {
     scene: resolveScene(),
     celebrated: false,
     danceStyle: selectedDanceId(),
+    danceForced: false,
     musicEnabled: musicInput.checked,
     musicTrack: selectedTrackId(),
     slug: null,
@@ -617,16 +664,20 @@ btnShareLink.addEventListener('click', shareCurrentTimer);
 btnFsShare.addEventListener('click', shareCurrentTimer);
 btnFsExit.addEventListener('click', exitCleanFullscreen);
 
-lightingSlider.addEventListener('input', (event) => {
-  runtime.previewHourOverride = parseFloat(event.target.value);
-  updateTimeOfDayLighting();
-});
+if (lightingSlider) {
+  lightingSlider.addEventListener('input', (event) => {
+    runtime.previewHourOverride = parseFloat(event.target.value);
+    updateTimeOfDayLighting();
+  });
+}
 
-btnResetLighting.addEventListener('click', () => {
-  runtime.previewHourOverride = null;
-  updateTimeOfDayLighting();
-  showToast('Valaistus palautettu reaaliaikaan.');
-});
+if (btnResetLighting) {
+  btnResetLighting.addEventListener('click', () => {
+    runtime.previewHourOverride = null;
+    updateTimeOfDayLighting();
+    showToast('Valaistus palautettu reaaliaikaan.');
+  });
+}
 
 btnNewEvent.addEventListener('click', () => {
   if (runtime.tickInterval) {

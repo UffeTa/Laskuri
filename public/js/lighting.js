@@ -12,7 +12,7 @@ export function updateTimeOfDayLighting() {
     const lightingIcon = document.getElementById('lighting-icon');
     const lightingPhaseLabel = document.getElementById('lighting-phase-label');
     const stageLightingOverlay = document.getElementById('stage-lighting-overlay');
-    if (!lightingClock || !stageLightingOverlay) return;
+    if (!stageLightingOverlay) return;
 
             const now = new Date();
             const decimalHour = runtime.previewHourOverride !== null
@@ -21,13 +21,17 @@ export function updateTimeOfDayLighting() {
 
             const displayH = Math.floor(decimalHour) % 24;
             const displayM = Math.floor((decimalHour - Math.floor(decimalHour)) * 60);
-            lightingClock.textContent = `${pad2(displayH)}:${pad2(displayM)}`;
+            if (lightingClock) lightingClock.textContent = `${pad2(displayH)}:${pad2(displayM)}`;
 
-            if (runtime.previewHourOverride === null) {
-                lightingSlider.value = (Math.round(decimalHour * 4) / 4).toFixed(2);
-                lightingModeText.textContent = 'Reaaliaikainen';
-            } else {
-                lightingModeText.textContent = `Esikatselu (${pad2(displayH)}:${pad2(displayM)})`;
+            if (lightingSlider) {
+                if (runtime.previewHourOverride === null) {
+                    lightingSlider.value = (Math.round(decimalHour * 4) / 4).toFixed(2);
+                }
+            }
+            if (lightingModeText) {
+                lightingModeText.textContent = runtime.previewHourOverride === null
+                    ? 'Reaaliaikainen'
+                    : `Esikatselu (${pad2(displayH)}:${pad2(displayM)})`;
             }
 
             const envSky = document.getElementById('env-sky');

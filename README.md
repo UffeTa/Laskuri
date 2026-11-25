@@ -1,6 +1,6 @@
 # Laskuri
 
-Ahlsell-pihan seikkailuajastin. Pipopäinen hahmo kävelee kohti mustaa BOS-5-autoa, valaistus seuraa katsojan paikallista kellonaikaa, ja viimeisenä päivänä hahmo tanssii. Perillä tulee konfetti ja fanfaari, jos musiikki on päällä. Käyttöliittymän tekstit ovat suomeksi.
+Ahlsell-pihan seikkailuajastin. Pipopäinen hahmo kävelee kohti mustaa BOS-5-autoa, valaistus seuraa katsojan paikallista kellonaikaa automaattisesti, ja viimeisenä päivänä hahmo tanssii. Laskurin isot numerot käyttävät itseisännöityä Intel One Mono -fonttia (`public/assets/fonts/`), jotta numerot 0–9 erottuvat toisistaan. Perillä tulee konfetti ja fanfaari, jos musiikki on päällä. Käyttöliittymän tekstit ovat suomeksi.
 
 Sivu julkaistaan Cloudflare Pages -projektissa `laskuri`. Osoite on `https://laskuri-89s.pages.dev`, koska `laskuri.pages.dev` oli varattu. Tuotantoa ei ole vielä julkaistu: se päivittyy vasta, kun `main` yhdistetään. Esikatselu on osoitteessa `https://preview.laskuri-89s.pages.dev`. Vanha GitHub Pages -osoite ei enää palvele tätä rakennetta, koska laskurit ja ylläpito tarvitsevat Pages Functionsin ja D1-tietokannan.
 
@@ -12,7 +12,7 @@ public/                 sivuston juuri (Pagesin build-output)
   admin/index.html      ylläpito
   css/styles.css        valmis tyyli (lähde: css/input.css)
   js/                   sovellus, musiikki, valaistus, jakaminen
-  assets/               hahmo, auto ja piha
+  assets/               hahmo, auto, piha ja laskurifontti
   dances/               tanssityylit ja rekisteri
   music/                taustaraidat ja rekisteri
 functions/              Cloudflare Pages Functions
@@ -53,18 +53,9 @@ Jokainen tyyli on oma moduuli kansiossa `public/dances/`. Rekisteri on `public/d
 
 Muuta koodia tai tietokantaa ei tarvitse muuttaa. Ylläpidon pudotusvalikko, julkinen lomake ja parametri `d` lukevat rekisterin.
 
-Valmiit tyylit:
+Valmiit tyylit: Groovi, Robotti, Disco, Breikki, Macarena, Twist, Hyppy, Moonwalk, Hammaslanka (`floss`), Dab, Hevostanssi (`gangnam`), Appelsiini (`orange`), Renegade, Zombi (`thriller`), Juoksumies (`runningman`), Griddy, Wednesday ja Oletustanssi (`oletus`). Ne ovat alkuperäisiä liikkeitä, eivät lainattuja kuvia tai koreografioita.
 
-| Tunnus | Nimi | Kävely |
-| --- | --- | --- |
-| `groove` | Groovi | tavallinen kävely |
-| `robot` | Robotti | tavallinen kävely |
-| `disco` | Disco | pomppiva kävely |
-| `toprock` | Breikki | ripeä kävely |
-| `macarena` | Macarena | tavallinen kävely |
-| `twist` | Twist | ripeä kävely |
-| `hop` | Hyppy | hyppely |
-| `moonwalk` | Moonwalk | liukuva moonwalk |
+Jokaisella laskurin latauksella tanssi ja taustaraita arvotaan uudelleen, eri valinta kuin edellisellä kerralla. Viimeisin arvonta muistetaan selaimen `localStorage`-avaimissa `ahlsell_last_dance_<osoite>` ja `ahlsell_last_track_<osoite>`. Ylläpidon oletus on **Satunnainen**. Tietyn tyylin tai raidan valinta lukitsee sen. Vanha oletustanssi `groove` muutetaan arvontaan migraatiolla `0003_random_defaults.sql`. Parametri `d` pakottaa silti yhden tanssin yhdelle avaukselle.
 
 Kävelyanimaatio näkyy matkan aikana ja tanssi viimeisenä päivänä. Uuden tyylin CSS kannattaa animoida vain `transform`- ja `opacity`-ominaisuuksia, jotta puhelin pysyy kevyenä. Halutessasi voit laittaa moduuliin `walkClass`-luokan, joka vaihtaa kävelysyklin.
 
@@ -78,9 +69,9 @@ Raidat ovat Tone.js-määrittelyjä kansiossa `public/music/`. Rekisteri on `pub
 
 Ylläpito valitsee laskurille raidan tai arvon **Satunnainen** (`random`). Valinta tallentuu sarakkeeseen `music_track`. Kuulija voi mykistää äänen tai vaihtaa seuraavaan raitaan. Mykistys muistetaan selaimen `localStorage`-avaimessa `ahlsell_comic_music_muted`.
 
-Valmiit raidat: **Pihapolku** (`pihapolku`), **Yövuoro** (`yovuoro`) ja **Maaliviiva** (`maaliviiva`).
+Valmiit raidat, kukin noin kolme minuuttia: **Pihapolku**, **Yövuoro**, **Maaliviiva**, **Aamunkoitto**, **Kolikkopeli**, **Luolaseikkailu**, **Vesitaso** ja **Pommitus**.
 
-Ennen tuotantojulkaisua aja migraatio `migrations/0002_music_track.sql`. Se lisää sarakkeen `music_track` oletuksella `random`. Vanhat laskurit säilyvät, ja niiden musiikkivalinta pysyy ennallaan. Paikallisesti: `npm run db:migrate:local`. Tuotantoon: `npm run db:migrate:remote`.
+Ennen tuotantojulkaisua aja migraatiot `migrations/0002_music_track.sql` ja `migrations/0003_random_defaults.sql`. Ensimmäinen lisää sarakkeen `music_track`. Jälkimmäinen vaihtaa vanhan oletustanssin `groove` arvontaan. Erikseen valittu tyyli tai raita säilyy, kunnes ylläpito vaihtaa sen satunnaiseksi. Paikallisesti: `npm run db:migrate:local`. Tuotantoon: `npm run db:migrate:remote`.
 
 ## Ylläpito
 
@@ -133,7 +124,7 @@ npx wrangler pages deploy public --project-name laskuri --branch preview
 
 Ylläpito on `/admin` ja yksittäinen laskuri `/l/<slug>` saman osoitteen perässä. Esimerkiksi esikatselun ylläpito on https://preview.laskuri-89s.pages.dev/admin.
 
-D1-kanta `laskuri` on olemassa ja migraatio `0001_init.sql` on ajettu. Bindingin nimi on `DB`, `database_id` on `7bd16b1f-8382-4763-a81a-661f7a5d1954`. Taulut `counters` ja `login_attempts` ovat kannassa. Uutta kantaa ei luoda eikä `0001`:tä ajeta uudelleen. Taustaraidan sarake tulee migraatiosta `0002_music_track.sql`, joka pitää ajaa kerran komennolla `npm run db:migrate:remote` ennen kuin ylläpito tallentaa raitoja tuotantoon. Paikallinen kanta päivitetään komennolla `npm run db:migrate:local`.
+D1-kanta `laskuri` on olemassa ja migraatio `0001_init.sql` on ajettu. Bindingin nimi on `DB`, `database_id` on `7bd16b1f-8382-4763-a81a-661f7a5d1954`. Taulut `counters` ja `login_attempts` ovat kannassa. Uutta kantaa ei luoda eikä `0001`:tä ajeta uudelleen. Taustaraidan sarake tulee migraatiosta `0002_music_track.sql` ja oletusarvonta migraatiosta `0003_random_defaults.sql`. Aja molemmat kerran komennolla `npm run db:migrate:remote` ennen tuotantoa. Paikallinen kanta päivitetään komennolla `npm run db:migrate:local`. Kohdeauto on piirretty Elroq-, Enyaq- ja Peaq-suunnan sähkömaasturina: pysty kori, kaksivärinen katto, suljettu keula, kapea valonauha ja tekstimuotoinen SKODA-sanamerkki. Kilpi on yhä BOS-5. Virallista logotiedostoa ei käytetä.
 
 Salaisuudet `ADMIN_PASSWORD` ja `SESSION_SECRET` on asetettu sekä tuotantoon että esikatseluun. Niitä ei ole repossa eikä `wrangler.toml`-tiedostossa. Uudelleenasetus:
 

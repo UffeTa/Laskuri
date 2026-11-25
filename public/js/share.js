@@ -106,7 +106,8 @@ export function parseLegacyShare(danceIds) {
   const startTimeMs = Number.isFinite(startRaw) && startRaw > 0 && startRaw < targetTimeMs
     ? startRaw
     : Date.now();
-  const requestedDance = params.get('d') || 'groove';
+  const requestedDance = params.get('d');
+  const danceForced = Boolean(requestedDance && danceIds.includes(requestedDance));
   return {
     isFullscreen: params.get('view') === 'full',
     state: {
@@ -114,7 +115,8 @@ export function parseLegacyShare(danceIds) {
       startTimeMs,
       targetTimeMs,
       counterMode: params.get('m') === 'h' ? 'hours_seconds' : 'days_hours_seconds',
-      danceStyle: danceIds.includes(requestedDance) ? requestedDance : 'groove',
+      danceStyle: danceForced ? requestedDance : 'random',
+      danceForced,
       musicEnabled: true,
       musicTrack: knownShareTrack(params.get('k')),
       celebrated: false,
