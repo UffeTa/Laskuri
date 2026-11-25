@@ -1,5 +1,5 @@
 import { MUSIC_TRACKS, RANDOM_TRACK_ID } from '../music/registry.js';
-import { shareLockParams } from './visit-choice.js';
+import { locksFromShareParams, shareLockParams } from './visit-choice.js';
 
 function knownShareTrack(id) {
   if (!id || id === RANDOM_TRACK_ID) return RANDOM_TRACK_ID;
@@ -121,8 +121,12 @@ export function parseLegacyShare(danceIds) {
   const startTimeMs = Number.isFinite(startRaw) && startRaw > 0 && startRaw < targetTimeMs
     ? startRaw
     : Date.now();
-  const requestedDance = params.get('d');
-  const danceForced = Boolean(requestedDance && danceIds.includes(requestedDance));
+  const locks = locksFromShareParams({
+    danceId: params.get('d'),
+    trackId: knownShareTrack(params.get('k')),
+    danceIds,
+    trackIds: MUSIC_TRACKS.map((track) => track.id),
+  });
   return {
     isFullscreen: params.get('view') === 'full',
     state: {
@@ -130,10 +134,12 @@ export function parseLegacyShare(danceIds) {
       startTimeMs,
       targetTimeMs,
       counterMode: params.get('m') === 'h' ? 'hours_seconds' : 'days_hours_seconds',
-      danceStyle: danceForced ? requestedDance : 'random',
-      danceForced,
+      danceStyle: locks.danceStyle,
+      danceForced: locks.danceForced,
+      danceLocked: locks.danceLocked,
       musicEnabled: true,
-      musicTrack: knownShareTrack(params.get('k')),
+      musicTrack: locks.musicTrack,
+      musicLocked: locks.musicLocked,
       celebrated: false,
       slug: null,
     },

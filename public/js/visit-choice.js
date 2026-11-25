@@ -21,6 +21,22 @@ export function resolveChoice({ forced, locked, value, ids, previousId }) {
   return { id: pickDifferent(ids, previousId), randomized: true };
 }
 
+/**
+ * A legacy share URL only contains d/k when that choice was locked.
+ * Reading them back must restore the lock, or a refresh re-rolls the track.
+ */
+export function locksFromShareParams({ danceId, trackId, danceIds, trackIds }) {
+  const danceLocked = Boolean(danceId && danceIds.includes(danceId));
+  const musicLocked = Boolean(trackId && trackId !== 'random' && trackIds.includes(trackId));
+  return {
+    danceStyle: danceLocked ? danceId : 'random',
+    danceForced: danceLocked,
+    danceLocked,
+    musicTrack: musicLocked ? trackId : 'random',
+    musicLocked,
+  };
+}
+
 /** Share links carry d/k only for an admin lock, never for a rolled visit. */
 export function shareLockParams(state) {
   const dance = state && state.danceLocked && state.danceStyle && state.danceStyle !== 'random'

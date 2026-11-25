@@ -11,7 +11,7 @@ import luolaseikkailu from '../public/music/luolaseikkailu.js';
 import vesitaso from '../public/music/vesitaso.js';
 import pommitus from '../public/music/pommitus.js';
 import { DANCE_STYLES } from '../public/dances/registry.js';
-import { pickDifferent, resolveChoice, shareLockParams } from '../public/js/visit-choice.js';
+import { locksFromShareParams, pickDifferent, resolveChoice, shareLockParams } from '../public/js/visit-choice.js';
 import { isValidSlug, slugify } from '../functions/lib/slug.js';
 
 assert.equal(slugify('Työpäivä pulkassa & viikonloppu'), 'tyopaiva-pulkassa-viikonloppu');
@@ -103,5 +103,28 @@ const forced = resolveChoice({ forced: true, locked: false, value: 'dab', ids, p
 assert.deepEqual(forced, { id: 'dab', randomized: false });
 assert.deepEqual(shareLockParams({ danceStyle: 'groove', danceLocked: false, musicTrack: 'random' }), { d: '', k: '' });
 assert.deepEqual(shareLockParams({ danceStyle: 'floss', danceLocked: true, musicTrack: 'yovuoro', musicLocked: true }), { d: 'floss', k: 'yovuoro' });
+const fromLockedUrl = locksFromShareParams({
+  danceId: 'floss',
+  trackId: 'yovuoro',
+  danceIds: ids,
+  trackIds: ['pihapolku', 'yovuoro'],
+});
+assert.equal(fromLockedUrl.danceLocked, true);
+assert.equal(fromLockedUrl.musicLocked, true);
+assert.deepEqual(resolveChoice({
+  forced: false,
+  locked: fromLockedUrl.musicLocked,
+  value: fromLockedUrl.musicTrack,
+  ids: ['pihapolku', 'yovuoro'],
+  previousId: 'pihapolku',
+}), { id: 'yovuoro', randomized: false });
+const fromOpenUrl = locksFromShareParams({
+  danceId: null,
+  trackId: 'random',
+  danceIds: ids,
+  trackIds: ['pihapolku', 'yovuoro'],
+});
+assert.equal(fromOpenUrl.danceLocked, false);
+assert.equal(fromOpenUrl.musicLocked, false);
 
 console.log('unit ok');
