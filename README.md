@@ -2,7 +2,7 @@
 
 Ahlsell-pihan seikkailuajastin. Pipopäinen hahmo kävelee kohti mustaa BOS-5-autoa, valaistus seuraa katsojan paikallista kellonaikaa, ja viimeisenä päivänä hahmo tanssii. Perillä tulee konfetti ja fanfaari, jos musiikki on päällä. Käyttöliittymän tekstit ovat suomeksi.
 
-Sivu julkaistaan Cloudflare Pagesissa. Vanha GitHub Pages -osoite ei enää palvele tätä rakennetta, koska laskurit ja ylläpito tarvitsevat Pages Functionsin ja D1-tietokannan.
+Sivu julkaistaan Cloudflare Pages -projektissa `laskuri`. Osoite on `https://laskuri-89s.pages.dev`, koska `laskuri.pages.dev` oli varattu. Tuotantoa ei ole vielä julkaistu: se päivittyy vasta, kun `main` yhdistetään. Esikatselu on osoitteessa `https://preview.laskuri-89s.pages.dev`. Vanha GitHub Pages -osoite ei enää palvele tätä rakennetta, koska laskurit ja ylläpito tarvitsevat Pages Functionsin ja D1-tietokannan.
 
 ## Rakenne
 
@@ -86,35 +86,42 @@ Aja `npm run build:css` uudelleen, jos lisäät Tailwind-luokkia `public/`-tiedo
 
 ## Cloudflare Pages
 
-D1-kanta `laskuri` on jo olemassa ja migraatio `0001_init.sql` on ajettu tuotantoon. `wrangler.toml` osoittaa siihen:
+Pages-projektin nimi on `laskuri`. Julkinen alidomain on `laskuri-89s`, koska `laskuri.pages.dev` oli jo varattu. `wrangler pages deploy` käyttää projektin nimeä, ei alidomainia:
 
-- `name = "laskuri"` (sama nimi `wrangler pages deploy` -komennolle)
-- `pages_build_output_dir = "public"`
-- binding `DB`, `database_name = "laskuri"`, `database_id = "7bd16b1f-8382-4763-a81a-661f7a5d1954"`
+```bash
+npx wrangler pages deploy public --project-name laskuri
+npx wrangler pages deploy public --project-name laskuri --branch preview
+```
 
-Salasanaa ja istuntosalaisuutta ei kirjoiteta repoon eikä `wrangler.toml`-tiedostoon. Uutta kantaa ei luoda uudelleen, eikä `0001_init.sql`:ää ajeta uudelleen.
+`wrangler.toml` sisältää `name = "laskuri"` ja `pages_build_output_dir = "public"`.
 
-Jäljellä oleva käyttöönotto:
+| Ympäristö | Osoite | Tila |
+| --- | --- | --- |
+| Tuotanto | https://laskuri-89s.pages.dev | Ei vielä julkaistu. Päivittyy, kun `main` yhdistetään. |
+| Esikatselu | https://preview.laskuri-89s.pages.dev | Julkaistu haaraan `preview` komennolla yllä. |
 
-1. Kirjaudu: `npx wrangler login`
-2. Yhdistä repo Cloudflare Pagesiin (Workers & Pages → Create → Pages → Connect to Git):
-   - Production branch: `main`
-   - Build command: `npm run build:css`
-   - Build output directory: `public`
-   - Älä aseta `NODE_ENV=production` asennuksen ajaksi: `tailwindcss` on devDependency, ja Pagesin oletusasennus asentaa sen.
-   - Root directory: repon juuri
-   - `functions/` jätetään juureen. Pages ottaa sen käyttöön automaattisesti, sitä ei kopioida `public/`-kansioon.
-3. Varmista projektin Settings → Bindings -kohdassa D1-binding: muuttujan nimi `DB`, tietokanta `laskuri`. Tunnus on sama kuin `wrangler.toml`-tiedostossa.
-4. Aseta salaisuudet sen jälkeen, kun Pages-projekti on olemassa. Projektin nimen pitää olla `laskuri`, jotta `wrangler pages deploy` toimii ilman eri nimeä.
+Ylläpito on `/admin` ja yksittäinen laskuri `/l/<slug>` saman osoitteen perässä. Esimerkiksi esikatselun ylläpito on https://preview.laskuri-89s.pages.dev/admin.
+
+D1-kanta `laskuri` on olemassa ja migraatio `0001_init.sql` on ajettu. Bindingin nimi on `DB`, `database_id` on `7bd16b1f-8382-4763-a81a-661f7a5d1954`. Taulut `counters` ja `login_attempts` ovat kannassa. Uutta kantaa ei luoda eikä tätä migraatiota ajeta uudelleen. Myöhempi migraatio ajetaan komennolla `npm run db:migrate:remote`. Paikallinen kanta alustetaan yhä komennolla `npm run db:migrate:local`.
+
+Salaisuudet `ADMIN_PASSWORD` ja `SESSION_SECRET` on asetettu sekä tuotantoon että esikatseluun. Niitä ei ole repossa eikä `wrangler.toml`-tiedostossa. Uudelleenasetus:
 
 ```bash
 npx wrangler pages secret put ADMIN_PASSWORD --project-name laskuri
 npx wrangler pages secret put SESSION_SECRET --project-name laskuri
+npx wrangler pages secret put ADMIN_PASSWORD --project-name laskuri --env preview
+npx wrangler pages secret put SESSION_SECRET --project-name laskuri --env preview
 ```
 
-`SESSION_SECRET` on pitkä satunnainen merkkijono. Sen vaihtaminen mitätöi vanhat kirjautumiset. `ADMIN_PASSWORD` on ylläpitosalasana.
+`SESSION_SECRET`in vaihtaminen mitätöi kyseisen ympäristön vanhat kirjautumiset.
 
-5. Julkaise yhdistämällä `main`-haaraan tai komenolla `npx wrangler pages deploy public --project-name laskuri`.
-6. Avaa `https://laskuri.pages.dev/admin`, kirjaudu ja luo ensimmäinen laskuri. Julkinen sivu on `https://laskuri.pages.dev/l/<slug>`.
+GitHubia ei ole vielä kytketty Pages-projektiin, joten push ei julkaise itseään. Automaattinen julkaisu kytketään Cloudflare-hallinnassa (Workers & Pages → `laskuri` → yhdistä Git). Asetukset silloin:
 
-Taulut `counters` ja `login_attempts` ovat jo tuotantokannassa. Uusi migraatiotiedosto ajetaan myöhemmin komennolla `npm run db:migrate:remote`. Paikallinen kanta alustetaan yhä komennolla `npm run db:migrate:local`.
+- Production branch: `main`
+- Build command: `npm run build:css`
+- Build output directory: `public`
+- Root directory: repon juuri
+- Älä aseta `NODE_ENV=production` asennuksen ajaksi: `tailwindcss` on devDependency
+- `functions/` jää juureen. Pages ottaa sen käyttöön automaattisesti
+
+Ilman Git-kytkentää `main`-yhdistys ei vielä julkaise mitään. Tuotanto-osoite https://laskuri-89s.pages.dev päivittyy, kun `main` on yhdistetty ja se on julkaistu: joko automaattisesti Git-kytkennän jälkeen tai komennolla `npx wrangler pages deploy public --project-name laskuri`. Esikatselu julkaistaan erikseen komennolla `--branch preview`. D1-bindingin nimi hallinnassa on `DB` ja tietokanta `laskuri`.
